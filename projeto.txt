@@ -1,0 +1,119 @@
+criação do plugin WordPress “Gerador de Certificados WP” (versão independente)
+
+    Instrução:
+    Desenvolva um plugin WordPress chamado “Gerador de Certificados WP”, que permita ao administrador criar, personalizar e gerar certificados em PDF (frente e verso) diretamente no painel do WordPress, sem depender de serviços externos.
+
+Requisitos funcionais do plugin
+1. Interface do Administrador (Menu no Painel)
+
+    Criar um menu lateral no painel do WordPress chamado “Certificados” com as seguintes seções:
+        🖼️ Modelos de Certificado
+        👩‍🎓 Participantes
+        🧾 Emissão
+        ⚙️ Configurações
+
+2. Modelos de Certificado
+
+    Permitir ao administrador enviar duas imagens de fundo (BG) em tamanho A4 (210x297 mm):
+        Modelo Frente (A4) — plano de fundo do certificado principal
+        Modelo Verso (A4) — plano de fundo do verso do certificado
+    Os arquivos enviados devem ser armazenados em /wp-content/uploads/certificados/modelos/frente e /wp-content/uploads/certificados/modelos/verso.
+    Exibir visualização (preview) após upload.
+    permitir renomear e identificar as frentes e versos.
+    Permitir substituição dos modelos a qualquer momento.
+    Armazenar os caminhos das imagens nas opções do WordPress.
+
+3. Cadastro de Participantes
+
+    Interface simples com campos:
+        Nome completo do aluno
+        Curso
+        Data de início
+        Data de término
+        Duração (horas)
+        Cidade
+        Data de emissão
+        Número do Livro
+        Número da Página
+        Número do Certificado
+    Permitir adicionar registros manualmente ou importar via CSV.
+    Exibir lista dos participantes cadastrados em uma tabela (com opção de editar ou excluir).
+
+4. Emissão de Certificados
+
+    Ao selecionar um participante, gerar automaticamente o PDF com frente e verso:
+
+        A frente exibe:
+            Nome completo do aluno
+            Nome do curso
+            Datas de início e término
+            Duração (ex: “40 horas”)
+            Cidade e data de emissão
+
+        O verso exibe:
+            Número do Livro
+            Número da Página
+            Número do Certificado
+    Gerar o PDF em formato A4 horizontal (paisagem), com as imagens de fundo e os textos sobrepostos nos locais definidos via coordenadas configuráveis (pode haver ajuste manual na aba Configurações).
+    Salvar automaticamente o arquivo PDF em:
+    /wp-content/uploads/certificados/gerados/
+
+    Exibir opção para:
+        Baixar PDF individual
+        Gerar todos em lote (ZIP)
+
+5. Configurações
+
+    Permitir ajustar posição e estilo dos textos no certificado (por exemplo, posição X/Y, fonte, tamanho, cor).
+
+    Permitir definir:
+        Fonte padrão (Google Fonts)
+        Cor do texto
+        Tamanho da fonte
+        Alinhamento
+    Armazenar as configurações em wp_options.
+
+6. Histórico e Gerenciamento
+
+    Criar aba de histórico com:
+        Nome do aluno
+        Curso
+        Data de emissão
+        Caminho do arquivo gerado
+    Permitir reemitir ou baixar novamente certificados anteriores.
+
+7. Segurança e Boas Práticas
+
+    Usar nonce e verificação de permissões (manage_options) nas ações do painel.
+    Gerar PDFs localmente usando bibliotecas PHP como TCPDF, mPDF ou Dompdf.
+    Garantir compatibilidade com PHP 8+.
+    Seguir padrões WordPress (wp_enqueue_script, wp_enqueue_style, admin_menu, add_submenu_page, etc.).
+
+💡 Extras opcionais
+
+    Adicionar shortcode [certificado_validacao numero="XYZ123"] para exibir dados do certificado (nome do aluno, curso, validade, etc.) no front-end.
+    Envio automático do PDF por e-mail após geração (wp_mail()).
+    Possibilidade de incluir assinaturas digitais (imagem) e selos de autenticação configuráveis.
+
+🧰 Estrutura de arquivos sugerida
+
+/gerador-certificados-wp/
+│
+├── gerador-certificados-wp.php          # Arquivo principal do plugin
+├── /admin/
+│   ├── admin-menu.php
+│   ├── page-modelos.php
+│   ├── page-participantes.php
+│   ├── page-emissao.php
+│   └── page-configuracoes.php
+├── /includes/
+│   ├── certificate-generator.php         # Classe para geração dos PDFs
+│   ├── csv-importer.php
+│   └── helpers.php
+├── /assets/
+│   ├── css/admin.css
+│   └── js/admin.js
+└── /uploads/
+    └── certificados/
+        ├── modelos/
+        └── gerados/
