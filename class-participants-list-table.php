@@ -18,39 +18,53 @@ class GCWP_Participants_List_Table extends WP_List_Table {
         ] );
     }
 
-    public static function get_participants( $per_page = 10, $page_number = 1 ) {
+    public static function get_participants( $per_page = 10, $page_number = 1, $search = '' ) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'gcwp_participantes';
-
-        $sql = "SELECT * FROM {$table_name}";
-
+    
+        $sql = "SELECT * FROM {$table_name} WHERE 1=1";
+        $params = [];
+    
+        if ( ! empty( $search ) ) {
+            $sql .= " AND (nome_completo LIKE %s OR curso LIKE %s OR numero_certificado LIKE %s)";
+            $like = '%' . $wpdb->esc_like( $search ) . '%';
+            $params[] = $like;
+            $params[] = $like;
+            $params[] = $like;
+        }
+    
         if ( ! empty( $_REQUEST['orderby'] ) ) {
             $sql .= ' ORDER BY ' . esc_sql( $_REQUEST['orderby'] );
             $sql .= ! empty( $_REQUEST['order'] ) ? ' ' . esc_sql( $_REQUEST['order'] ) : ' ASC';
         } else {
             $sql .= ' ORDER BY id DESC';
         }
-
+    
         $sql .= " LIMIT $per_page";
         $sql .= ' OFFSET ' . ( $page_number - 1 ) * $per_page;
-
-        return $wpdb->get_results( $sql, 'ARRAY_A' );
+    
+        return $wpdb->get_results( $wpdb->prepare( $sql, $params ), 'ARRAY_A' );
     }
 
     public static function delete_participant( $id ) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'gcwp_participantes';
-
         $wpdb->delete( $table_name, [ 'id' => $id ], [ '%d' ] );
     }
 
-    public static function record_count() {
+    public static function record_count( $search = '' ) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'gcwp_participantes';
-
-        $sql = "SELECT COUNT(*) FROM {$table_name}";
-
-        return $wpdb->get_var( $sql );
+        $sql = "SELECT COUNT(*) FROM {$table_name} WHERE 1=1";
+        $params = [];
+        if ( ! empty( $search ) ) {
+            $sql .= " AND (nome_completo LIKE %s OR curso LIKE %s OR numero_certificado LIKE %s)";
+            $like = '%' . $wpdb->esc_like( $search ) . '%';
+            $params[] = $like;
+            $params[] = $like;
+            $params[] = $like;
+        }
+        return $wpdb->get_var( $wpdb->prepare( $sql, $params ) );
     }
 
     public function no_items() {
@@ -118,16 +132,17 @@ class GCWP_Participants_List_Table extends WP_List_Table {
         /** Process bulk action */
         $this->process_bulk_action();
 
+        $search_term = isset( $_REQUEST['s'] ) ? sanitize_text_field( $_REQUEST['s'] ) : '';
         $per_page     = $this->get_items_per_page( 'participants_per_page', 10 );
         $current_page = $this->get_pagenum();
-        $total_items  = self::record_count();
+        $total_items  = self::record_count( $search_term );
 
         $this->set_pagination_args( [
             'total_items' => $total_items,
             'per_page'    => $per_page,
         ] );
 
-        $this->items = self::get_participants( $per_page, $current_page );
+        $this->items = self::get_participants( $per_page, $current_page, $search_term );
     }
 
     public function process_bulk_action() {

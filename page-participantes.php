@@ -23,6 +23,7 @@ global $gcwp_participants_list_table;
             <input type="hidden" name="page" value="gcwp_participants_list_table">
             <?php
             $gcwp_participants_list_table->search_box( 'Pesquisar participantes', 'participant' );
+            $gcwp_participants_list_table->prepare_items(); // Adicionado para preparar os itens
             $gcwp_participants_list_table->display();
             ?>
         </form>

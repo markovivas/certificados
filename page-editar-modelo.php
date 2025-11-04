@@ -52,15 +52,15 @@ if (isset($_POST['gcwp_edit_submit']) && isset($_POST['gcwp_edit_nonce']) && wp_
                 // Atualizar URL se este modelo estiver selecionado
                 $current_url = '';
                 if ($tipo === 'frente') {
-                    $current_url = get_option('gcwp_modelo_frente', '');
+                    $current_url = get_option('gcwp_modelo_frente_url', '');
                 } elseif ($tipo === 'verso') {
-                    $current_url = get_option('gcwp_modelo_verso', '');
+                    $current_url = get_option('gcwp_modelo_verso_url', '');
                 }
                 
                 if (!empty($current_url) && strpos($current_url, $file) !== false) {
                     $new_url = $upload_dir['baseurl'] . '/certificados/modelos/' . $tipo . '/' . $file;
                     if ($tipo === 'frente') {
-                        update_option('gcwp_modelo_frente', $new_url);
+                        update_option('gcwp_modelo_frente_url', $new_url);
                     } elseif ($tipo === 'verso') {
                         update_option('gcwp_modelo_verso', $new_url);
                     }

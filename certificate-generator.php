@@ -1,6 +1,4 @@
 <?php
-use Mpdf\Mpdf;
-use Mpdf\MpdfException;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly.
@@ -17,9 +15,9 @@ class GCWP_Certificate_Generator {
      */
     public function generate_certificate( $participant, $modelo_id = '' ) {
         try {
-            // Verificar se a biblioteca mPDF está disponível
-            if (!class_exists('\\Mpdf\\Mpdf')) {
-                return new WP_Error( 'mpdf_missing', __( 'A biblioteca mPDF não está instalada. Por favor, instale o Composer e execute "composer require mpdf/mpdf" na pasta do plugin.', 'gerador-certificados-wp' ) );
+            // Verificar se a biblioteca TCPDF/FPDI está disponível
+            if (!class_exists('\\setasign\\Fpdi\\Tcpdf\\Fpdi')) {
+                return new WP_Error( 'tcpdf_missing', __( 'A biblioteca TCPDF/FPDI não está instalada. Por favor, execute "composer update" na pasta do plugin.', 'gerador-certificados-wp' ) );
             }
             
             // Obter diretórios de upload
@@ -36,80 +34,81 @@ class GCWP_Certificate_Generator {
             }
             
             // Obter caminhos dos modelos
-            $template_front_url = get_option('gcwp_modelo_frente', '');
-            $template_back_url = get_option('gcwp_modelo_verso', '');
+            // Prioriza o modelo passado como parâmetro, senão, usa o modelo padrão selecionado.
+            $modelo_selecionado_slug = !empty($modelo_id) ? $modelo_id : get_option('gcwp_modelo_selecionado', '');
 
-            $template_front = !empty($template_front_url) ? str_replace(wp_get_upload_dir()['baseurl'], wp_get_upload_dir()['basedir'], $template_front_url) : '';
-            $template_back = !empty($template_back_url) ? str_replace(wp_get_upload_dir()['baseurl'], wp_get_upload_dir()['basedir'], $template_back_url) : '';
+            if (empty($modelo_selecionado_slug)) {
+                return new WP_Error('no_model_selected', __('Nenhum modelo de certificado foi selecionado. Por favor, selecione um na página de Modelos.', 'gerador-certificados-wp'));
+            }
+
+            $modelo_dir = $modelos_dir . '/' . $modelo_selecionado_slug;
+            
+            $template_front = !empty(glob($modelo_dir . '/frente.*')) ? glob($modelo_dir . '/frente.*')[0] : '';
+            $template_back = !empty(glob($modelo_dir . '/verso.*')) ? glob($modelo_dir . '/verso.*')[0] : '';
 
             if (empty($template_front) || !file_exists($template_front)) {
                 return new WP_Error('missing_template', __('O modelo de certificado (frente) não foi encontrado.', 'gerador-certificados-wp'));
             }
 
-            // 2. Initialize mPDF in landscape mode
-            $mpdf = new Mpdf([
-                'mode'   => 'utf-8',
-                'format' => 'A4-L', // A4 Landscape
-                'margin_left' => 0,
-                'margin_right' => 0,
-                'margin_top' => 0,
-                'margin_bottom' => 0,
-            ]);
+            // 2. Initialize TCPDF in landscape mode
+            $pdf = new \setasign\Fpdi\Tcpdf\Fpdi('L', 'mm', 'A4');
+            $pdf->setPrintHeader(false);
+            $pdf->setPrintFooter(false);
+            $pdf->SetMargins(0, 0, 0);
+            $pdf->SetAutoPageBreak(false);
 
             // 3. Add Front Page
-            $mpdf->AddPage();
-            $mpdf->SetDocTemplate($template_front, true);
-            
-            // Obter configurações de posição e estilo
-            $nome_pos_x = get_option('gcwp_nome_pos_x', '60');
-            $nome_pos_y = get_option('gcwp_nome_pos_y', '100');
-            $curso_pos_x = get_option('gcwp_curso_pos_x', '60');
-            $curso_pos_y = get_option('gcwp_curso_pos_y', '120');
-            $carga_pos_x = get_option('gcwp_carga_pos_x', '60');
-            $carga_pos_y = get_option('gcwp_carga_pos_y', '130');
-            $data_pos_x = get_option('gcwp_data_pos_x', '60');
-            $data_pos_y = get_option('gcwp_data_pos_y', '140');
-            
-            $nome_tamanho = get_option('gcwp_nome_tamanho', '24');
-            $nome_cor = get_option('gcwp_nome_cor', '#000000');
-            $nome_negrito = get_option('gcwp_nome_negrito', '1');
-            
-            $texto_tamanho = get_option('gcwp_texto_tamanho', '14');
-            $texto_cor = get_option('gcwp_texto_cor', '#000000');
-            $texto_negrito = get_option('gcwp_texto_negrito', '0');
-            
-            // Converter cor hex para RGB
-            $nome_rgb = $this->hex2rgb($nome_cor);
-            $texto_rgb = $this->hex2rgb($texto_cor);
-            
-            // Adicionar dados do participante - Nome
-            $nome_estilo = $nome_negrito == '1' ? 'B' : '';
-            $mpdf->SetFont('helvetica', $nome_estilo, $nome_tamanho);
-            $mpdf->SetTextColor($nome_rgb['r'], $nome_rgb['g'], $nome_rgb['b']);
-            
-            // Posicionar e adicionar o nome do participante
-            $mpdf->SetXY($nome_pos_x, $nome_pos_y);
-            $mpdf->Write(0, $participant->nome_completo);
-            
-            // Configurar estilo para outros textos
-            $texto_estilo = $texto_negrito == '1' ? 'B' : '';
-            $mpdf->SetFont('helvetica', $texto_estilo, $texto_tamanho);
-            $mpdf->SetTextColor($texto_rgb['r'], $texto_rgb['g'], $texto_rgb['b']);
-            
-            // Adicionar informações adicionais
-            $mpdf->SetXY($curso_pos_x, $curso_pos_y);
-            $mpdf->Write(0, sprintf(__('Curso: %s', 'gerador-certificados-wp'), $participant->curso));
-            
-            $mpdf->SetXY($carga_pos_x, $carga_pos_y);
-            $mpdf->Write(0, sprintf(__('Carga Horária: %s horas', 'gerador-certificados-wp'), $participant->duracao_horas));
-            
-            $mpdf->SetXY($data_pos_x, $data_pos_y);
-            $mpdf->Write(0, sprintf(__('Data: %s', 'gerador-certificados-wp'), date_i18n(get_option('date_format'))));
+            $pdf->AddPage();
+            // Use a imagem como fundo de página inteira (A4 Landscape: 297x210 mm)
+            $pdf->Image($template_front, 0, 0, 297, 210, '', '', '', false, 300, '', false, false, 0);
+
+            // Função auxiliar para escrever texto com estilo individual
+            $write_text = function($field, $text) use ($pdf) {
+                $pos_x = get_option("gcwp_{$field}_pos_x");
+                $pos_y = get_option("gcwp_{$field}_pos_y");
+                $tamanho = get_option("gcwp_{$field}_tamanho");
+                $cor = get_option("gcwp_{$field}_cor");
+                $fonte_nome = get_option("gcwp_{$field}_fonte");
+                $negrito = get_option("gcwp_{$field}_negrito");
+
+                // Adiciona a fonte personalizada se for um arquivo TTF
+                $font_file_path = GCWP_PLUGIN_DIR . 'fonts/' . $fonte_nome . '.ttf';
+                if (file_exists($font_file_path)) {
+                    // O método addTTFfont retorna o nome da fonte para ser usado em SetFont
+                    $fonte_nome = TCPDF_FONTS::addTTFfont($font_file_path, 'TrueTypeUnicode', '', 32);
+                }
+
+                $estilo = $negrito == '1' ? 'B' : '';
+                $pdf->SetFont($fonte_nome, $estilo, $tamanho);
+                $pdf->SetTextColorArray($this->hex2rgb($cor, true));
+                $pdf->SetXY($pos_x, $pos_y);
+                $pdf->Write(0, $text);
+            };
+
+            // Formatar datas
+            $data_inicio_f = date_i18n('d/m/Y', strtotime($participant->data_inicio));
+            $data_termino_f = date_i18n('d/m/Y', strtotime($participant->data_termino));
+            $data_emissao_f = date_i18n('d \d\e F \d\e Y', strtotime($participant->data_emissao));
+
+            // Escrever campos da frente
+            $write_text('nome', $participant->nome_completo);
+            $write_text('curso', $participant->curso);
+            $write_text('data_inicio', $data_inicio_f);
+            $write_text('data_termino', $data_termino_f);
+            $write_text('duracao', $participant->duracao_horas);
+            $write_text('cidade', $participant->cidade);
+            $write_text('data_emissao', $data_emissao_f);
             
             // Adicionar verso se existir
             if (!empty($template_back) && file_exists($template_back)) {
-                $mpdf->AddPage();
-                $mpdf->SetDocTemplate($template_back, true);
+                $pdf->AddPage();
+                // Use a imagem como fundo de página inteira
+                $pdf->Image($template_back, 0, 0, 297, 210, '', '', '', false, 300, '', false, false, 0);
+
+                // Escrever campos do verso
+                $write_text('livro', $participant->numero_livro);
+                $write_text('pagina', $participant->numero_pagina);
+                $write_text('registro', $participant->numero_certificado);
             }
             
             // 4. Gerar nome de arquivo único
@@ -117,7 +116,7 @@ class GCWP_Certificate_Generator {
             $filepath = $emitidos_dir . '/' . $filename;
             
             // 5. Salvar PDF
-            $mpdf->Output($filepath, 'F');
+            $pdf->Output($filepath, 'F');
             
             // 7. Retornar informações do arquivo gerado
              return array(
@@ -125,8 +124,13 @@ class GCWP_Certificate_Generator {
                  'url' => $upload_dir['baseurl'] . '/certificados/emitidos/' . $filename,
                  'filename' => $filename
              );
-            } catch (MpdfException $e) {
-            return new WP_Error('mpdf_error', $e->getMessage());
+            } catch (\Throwable $e) {
+            // Captura qualquer tipo de erro (Exception, ParseError, etc.)
+            $error_message = sprintf(
+                __('Ocorreu um erro ao gerar o PDF: %s no arquivo %s na linha %s.', 'gerador-certificados-wp'),
+                $e->getMessage(), $e->getFile(), $e->getLine()
+            );
+            return new WP_Error('tcpdf_error', $error_message);
         }
     }
 
@@ -141,9 +145,10 @@ class GCWP_Certificate_Generator {
      * Converte cor hexadecimal para RGB
      *
      * @param string $hex Cor em formato hexadecimal (ex: #000000)
+     * @param bool $as_array Retorna um array para TCPDF se true
      * @return array Array com valores R, G e B
      */
-    private function hex2rgb($hex) {
+    private function hex2rgb($hex, $as_array = false) {
         $hex = str_replace('#', '', $hex);
         
         if (strlen($hex) == 3) {
@@ -156,6 +161,11 @@ class GCWP_Certificate_Generator {
             $b = hexdec(substr($hex, 4, 2));
         }
         
-        return array('r' => $r, 'g' => $g, 'b' => $b);
+        $rgb = array('r' => $r, 'g' => $g, 'b' => $b);
+
+        if ($as_array) {
+            return [$r, $g, $b];
+        }
+        return $rgb;
     }
 }

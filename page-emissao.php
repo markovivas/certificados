@@ -61,18 +61,12 @@ $participantes = $wpdb->get_results("SELECT * FROM $table_name ORDER BY nome_com
 // Obter modelos disponíveis
 $upload_dir = wp_upload_dir();
 $modelos_dir = $upload_dir['basedir'] . '/certificados/modelos';
-$modelos = array();
+$modelos = is_dir($modelos_dir) ? array_filter(scandir($modelos_dir), function($item) use ($modelos_dir) {
+    return is_dir($modelos_dir . '/' . $item) && !in_array($item, ['.', '..', 'frente', 'verso']);
+}) : [];
 
-if (file_exists($modelos_dir . '/frente')) {
-    $frente_files = glob($modelos_dir . '/frente/*.{jpg,jpeg,png,gif}', GLOB_BRACE);
-    foreach ($frente_files as $file) {
-        $filename = basename($file);
-        $modelos[$filename] = sprintf(__('Modelo: %s', 'gerador-certificados-wp'), $filename);
-    }
-}
-
-// Obter modelo padrão
-$modelo_padrao = basename(get_option('gcwp_modelo_frente_url', ''));
+// Obter modelo selecionado como padrão
+$modelo_padrao = get_option('gcwp_modelo_selecionado');
 ?>
 
 <div class="wrap">
@@ -125,9 +119,11 @@ $modelo_padrao = basename(get_option('gcwp_modelo_frente_url', ''));
                             <td>
                                 <select name="modelo_id" id="modelo_id" class="regular-text" required>
                                     <option value=""><?php esc_html_e('-- Selecione --', 'gerador-certificados-wp'); ?></option>
-                                    <?php foreach ($modelos as $id => $nome): ?>
-                                        <option value="<?php echo esc_attr($id); ?>" <?php selected($id, $modelo_padrao); ?>>
-                                            <?php echo esc_html($nome); ?>
+                                    <?php foreach ($modelos as $modelo_slug): 
+                                        $modelo_nome = ucwords(str_replace('-', ' ', $modelo_slug));
+                                    ?>
+                                        <option value="<?php echo esc_attr($modelo_slug); ?>" <?php selected($modelo_slug, $modelo_padrao); ?>>
+                                            <?php echo esc_html($modelo_nome); ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
