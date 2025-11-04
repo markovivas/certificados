@@ -70,6 +70,7 @@ class GCWP_Certificate_Generator {
                 $cor = get_option("gcwp_{$field}_cor");
                 $fonte_nome = get_option("gcwp_{$field}_fonte");
                 $negrito = get_option("gcwp_{$field}_negrito");
+                $align = get_option("gcwp_{$field}_align", 'L'); // 'L' como padrão
 
                 // Adiciona a fonte personalizada se for um arquivo TTF
                 $font_file_path = GCWP_PLUGIN_DIR . 'fonts/' . $fonte_nome . '.ttf';
@@ -82,17 +83,24 @@ class GCWP_Certificate_Generator {
                 $pdf->SetFont($fonte_nome, $estilo, $tamanho);
                 $pdf->SetTextColorArray($this->hex2rgb($cor, true));
                 $pdf->SetXY($pos_x, $pos_y);
-                $pdf->Write(0, $text);
+
+                // Para alinhamento central ou à direita, a largura da célula precisa ser definida.
+                // 0 significa que vai até a margem direita.
+                // Se o alinhamento for 'C' ou 'R', a posição X deve ser 0 para alinhar em relação à página inteira.
+                $cell_width = ($align === 'C' || $align === 'R') ? 297 : 0; // Largura A4 paisagem
+                $current_x = ($align === 'C' || $align === 'R') ? 0 : $pos_x;
+                $pdf->SetX($current_x);
+                
+                $pdf->Cell($cell_width, 0, $text, 0, 0, $align);
             };
 
             // Formatar datas
             $data_inicio_f = date_i18n('d/m/Y', strtotime($participant->data_inicio));
             $data_termino_f = date_i18n('d/m/Y', strtotime($participant->data_termino));
             $data_emissao_f = date_i18n('d \d\e F \d\e Y', strtotime($participant->data_emissao));
-
             // Escrever campos da frente
-            $write_text('nome', $participant->nome_completo);
-            $write_text('curso', $participant->curso);
+            $write_text('nome', mb_strtoupper($participant->nome_completo, 'UTF-8'));
+            $write_text('curso', mb_strtoupper($participant->curso, 'UTF-8'));
             $write_text('data_inicio', $data_inicio_f);
             $write_text('data_termino', $data_termino_f);
             $write_text('duracao', $participant->duracao_horas);

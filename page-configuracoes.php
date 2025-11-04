@@ -19,6 +19,7 @@ if (isset($_POST['gcwp_save_config']) && check_admin_referer('gcwp_save_config',
         update_option("gcwp_{$field}_tamanho", sanitize_text_field($_POST["{$field}_tamanho"]));
         update_option("gcwp_{$field}_cor", sanitize_hex_color($_POST["{$field}_cor"]));
         update_option("gcwp_{$field}_fonte", sanitize_text_field($_POST["{$field}_fonte"]));
+        update_option("gcwp_{$field}_align", sanitize_text_field($_POST["{$field}_align"]));
         update_option("gcwp_{$field}_negrito", isset($_POST["{$field}_negrito"]) ? '1' : '0');
     }
     
@@ -36,16 +37,16 @@ function gcwp_get_field_settings($field, $defaults) {
 }
 
 $fields_config = [
-    'nome' => gcwp_get_field_settings('nome', ['pos_x' => 60, 'pos_y' => 80, 'tamanho' => 24, 'cor' => '#000000', 'negrito' => '1', 'fonte' => 'helvetica']),
-    'curso' => gcwp_get_field_settings('curso', ['pos_x' => 60, 'pos_y' => 100, 'tamanho' => 16, 'cor' => '#000000', 'negrito' => '1', 'fonte' => 'helvetica']),
-    'data_inicio' => gcwp_get_field_settings('data_inicio', ['pos_x' => 60, 'pos_y' => 120, 'tamanho' => 12, 'cor' => '#333333', 'negrito' => '0', 'fonte' => 'helvetica']),
-    'data_termino' => gcwp_get_field_settings('data_termino', ['pos_x' => 100, 'pos_y' => 120, 'tamanho' => 12, 'cor' => '#333333', 'negrito' => '0', 'fonte' => 'helvetica']),
-    'duracao' => gcwp_get_field_settings('duracao', ['pos_x' => 60, 'pos_y' => 135, 'tamanho' => 12, 'cor' => '#333333', 'negrito' => '0', 'fonte' => 'helvetica']),
-    'cidade' => gcwp_get_field_settings('cidade', ['pos_x' => 60, 'pos_y' => 150, 'tamanho' => 12, 'cor' => '#333333', 'negrito' => '0', 'fonte' => 'helvetica']),
-    'data_emissao' => gcwp_get_field_settings('data_emissao', ['pos_x' => 100, 'pos_y' => 150, 'tamanho' => 12, 'cor' => '#333333', 'negrito' => '0', 'fonte' => 'helvetica']),
-    'livro' => gcwp_get_field_settings('livro', ['pos_x' => 30, 'pos_y' => 50, 'tamanho' => 11, 'cor' => '#333333', 'negrito' => '0', 'fonte' => 'helvetica']),
-    'pagina' => gcwp_get_field_settings('pagina', ['pos_x' => 30, 'pos_y' => 65, 'tamanho' => 11, 'cor' => '#333333', 'negrito' => '0', 'fonte' => 'helvetica']),
-    'registro' => gcwp_get_field_settings('registro', ['pos_x' => 30, 'pos_y' => 80, 'tamanho' => 11, 'cor' => '#333333', 'negrito' => '0', 'fonte' => 'helvetica']),
+    'nome' => gcwp_get_field_settings('nome', ['pos_x' => 0, 'pos_y' => 80, 'tamanho' => 24, 'cor' => '#000000', 'negrito' => '1', 'fonte' => 'helvetica', 'align' => 'C']),
+    'curso' => gcwp_get_field_settings('curso', ['pos_x' => 0, 'pos_y' => 100, 'tamanho' => 16, 'cor' => '#000000', 'negrito' => '1', 'fonte' => 'helvetica', 'align' => 'C']),
+    'data_inicio' => gcwp_get_field_settings('data_inicio', ['pos_x' => 60, 'pos_y' => 120, 'tamanho' => 12, 'cor' => '#333333', 'negrito' => '0', 'fonte' => 'helvetica', 'align' => 'R']),
+    'data_termino' => gcwp_get_field_settings('data_termino', ['pos_x' => 100, 'pos_y' => 120, 'tamanho' => 12, 'cor' => '#333333', 'negrito' => '0', 'fonte' => 'helvetica', 'align' => 'L']),
+    'duracao' => gcwp_get_field_settings('duracao', ['pos_x' => 0, 'pos_y' => 135, 'tamanho' => 12, 'cor' => '#333333', 'negrito' => '0', 'fonte' => 'helvetica', 'align' => 'C']),
+    'cidade' => gcwp_get_field_settings('cidade', ['pos_x' => 60, 'pos_y' => 150, 'tamanho' => 12, 'cor' => '#333333', 'negrito' => '0', 'fonte' => 'helvetica', 'align' => 'R']),
+    'data_emissao' => gcwp_get_field_settings('data_emissao', ['pos_x' => 100, 'pos_y' => 150, 'tamanho' => 12, 'cor' => '#333333', 'negrito' => '0', 'fonte' => 'helvetica', 'align' => 'L']),
+    'livro' => gcwp_get_field_settings('livro', ['pos_x' => 30, 'pos_y' => 50, 'tamanho' => 11, 'cor' => '#333333', 'negrito' => '0', 'fonte' => 'helvetica', 'align' => 'R']),
+    'pagina' => gcwp_get_field_settings('pagina', ['pos_x' => 30, 'pos_y' => 65, 'tamanho' => 11, 'cor' => '#333333', 'negrito' => '0', 'fonte' => 'helvetica', 'align' => 'R']),
+    'registro' => gcwp_get_field_settings('registro', ['pos_x' => 30, 'pos_y' => 80, 'tamanho' => 11, 'cor' => '#333333', 'negrito' => '0', 'fonte' => 'helvetica', 'align' => 'R']),
 ];
 
 // Obter fontes disponíveis
@@ -162,6 +163,12 @@ if ($modelo_selecionado_slug) {
                         <label><?php esc_html_e('Tam:', 'gerador-certificados-wp'); ?></label> <input type="number" name="<?php echo $field; ?>_tamanho" value="<?php echo esc_attr($s['tamanho']); ?>" class="small-text">
                         <label><?php esc_html_e('Cor:', 'gerador-certificados-wp'); ?></label> <input type="color" name="<?php echo $field; ?>_cor" value="<?php echo esc_attr($s['cor']); ?>">
                         <label><input type="checkbox" name="<?php echo $field; ?>_negrito" value="1" <?php checked($s['negrito'], '1'); ?>> <?php esc_html_e('N', 'gerador-certificados-wp'); ?></label>
+                        <label><?php esc_html_e('Alinhar:', 'gerador-certificados-wp'); ?></label>
+                        <select name="<?php echo $field; ?>_align">
+                            <option value="L" <?php selected($s['align'], 'L'); ?>><?php esc_html_e('Esquerda', 'gerador-certificados-wp'); ?></option>
+                            <option value="C" <?php selected($s['align'], 'C'); ?>><?php esc_html_e('Centro', 'gerador-certificados-wp'); ?></option>
+                            <option value="R" <?php selected($s['align'], 'R'); ?>><?php esc_html_e('Direita', 'gerador-certificados-wp'); ?></option>
+                        </select>
                     </span>
                 </td>
             </tr>
@@ -201,6 +208,12 @@ if ($modelo_selecionado_slug) {
                         <label><?php esc_html_e('Tam:', 'gerador-certificados-wp'); ?></label> <input type="number" name="<?php echo $field; ?>_tamanho" value="<?php echo esc_attr($s['tamanho']); ?>" class="small-text">
                         <label><?php esc_html_e('Cor:', 'gerador-certificados-wp'); ?></label> <input type="color" name="<?php echo $field; ?>_cor" value="<?php echo esc_attr($s['cor']); ?>">
                         <label><input type="checkbox" name="<?php echo $field; ?>_negrito" value="1" <?php checked($s['negrito'], '1'); ?>> <?php esc_html_e('N', 'gerador-certificados-wp'); ?></label>
+                        <label><?php esc_html_e('Alinhar:', 'gerador-certificados-wp'); ?></label>
+                        <select name="<?php echo $field; ?>_align">
+                            <option value="L" <?php selected($s['align'], 'L'); ?>><?php esc_html_e('Esquerda', 'gerador-certificados-wp'); ?></option>
+                            <option value="C" <?php selected($s['align'], 'C'); ?>><?php esc_html_e('Centro', 'gerador-certificados-wp'); ?></option>
+                            <option value="R" <?php selected($s['align'], 'R'); ?>><?php esc_html_e('Direita', 'gerador-certificados-wp'); ?></option>
+                        </select>
                     </span>
                 </td>
             </tr>
