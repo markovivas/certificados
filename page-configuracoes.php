@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Salvar configurações
 if (isset($_POST['gcwp_save_config']) && check_admin_referer('gcwp_save_config', 'gcwp_config_nonce')) {
     $fields = [
-        'nome', 'curso', 'data_inicio', 'data_termino', 'duracao', 'cidade', 'data_emissao', // Frente
+        'nome', 'curso', 'data_inicio', 'data_termino', 'duracao', 'local_data', // Frente
         'livro', 'pagina', 'registro' // Verso
     ];
 
@@ -37,16 +37,15 @@ function gcwp_get_field_settings($field, $defaults) {
 }
 
 $fields_config = [
-    'nome' => gcwp_get_field_settings('nome', ['pos_x' => 0, 'pos_y' => 80, 'tamanho' => 24, 'cor' => '#000000', 'negrito' => '1', 'fonte' => 'helvetica', 'align' => 'C']),
-    'curso' => gcwp_get_field_settings('curso', ['pos_x' => 0, 'pos_y' => 100, 'tamanho' => 16, 'cor' => '#000000', 'negrito' => '1', 'fonte' => 'helvetica', 'align' => 'C']),
-    'data_inicio' => gcwp_get_field_settings('data_inicio', ['pos_x' => 60, 'pos_y' => 120, 'tamanho' => 12, 'cor' => '#333333', 'negrito' => '0', 'fonte' => 'helvetica', 'align' => 'R']),
-    'data_termino' => gcwp_get_field_settings('data_termino', ['pos_x' => 100, 'pos_y' => 120, 'tamanho' => 12, 'cor' => '#333333', 'negrito' => '0', 'fonte' => 'helvetica', 'align' => 'L']),
-    'duracao' => gcwp_get_field_settings('duracao', ['pos_x' => 0, 'pos_y' => 135, 'tamanho' => 12, 'cor' => '#333333', 'negrito' => '0', 'fonte' => 'helvetica', 'align' => 'C']),
-    'cidade' => gcwp_get_field_settings('cidade', ['pos_x' => 60, 'pos_y' => 150, 'tamanho' => 12, 'cor' => '#333333', 'negrito' => '0', 'fonte' => 'helvetica', 'align' => 'R']),
-    'data_emissao' => gcwp_get_field_settings('data_emissao', ['pos_x' => 100, 'pos_y' => 150, 'tamanho' => 12, 'cor' => '#333333', 'negrito' => '0', 'fonte' => 'helvetica', 'align' => 'L']),
-    'livro' => gcwp_get_field_settings('livro', ['pos_x' => 30, 'pos_y' => 50, 'tamanho' => 11, 'cor' => '#333333', 'negrito' => '0', 'fonte' => 'helvetica', 'align' => 'R']),
-    'pagina' => gcwp_get_field_settings('pagina', ['pos_x' => 30, 'pos_y' => 65, 'tamanho' => 11, 'cor' => '#333333', 'negrito' => '0', 'fonte' => 'helvetica', 'align' => 'R']),
-    'registro' => gcwp_get_field_settings('registro', ['pos_x' => 30, 'pos_y' => 80, 'tamanho' => 11, 'cor' => '#333333', 'negrito' => '0', 'fonte' => 'helvetica', 'align' => 'R']),
+    'nome' => gcwp_get_field_settings('nome', ['pos_x' => 0, 'pos_y' => 57, 'tamanho' => 35, 'cor' => '#002e67', 'negrito' => '1', 'fonte' => 'ArialCEMTBlack', 'align' => 'C']),
+    'curso' => gcwp_get_field_settings('curso', ['pos_x' => 0, 'pos_y' => 90, 'tamanho' => 35, 'cor' => '#002e67', 'negrito' => '1', 'fonte' => 'ArialCEMTBlack', 'align' => 'C']),
+    'data_inicio' => gcwp_get_field_settings('data_inicio', ['pos_x' => 100, 'pos_y' => 131, 'tamanho' => 20, 'cor' => '#002e67', 'negrito' => '1', 'fonte' => 'ArialCEMTBlack', 'align' => 'L']),
+    'data_termino' => gcwp_get_field_settings('data_termino', ['pos_x' => 155, 'pos_y' => 131, 'tamanho' => 20, 'cor' => '#002e67', 'negrito' => '1', 'fonte' => 'ArialCEMTBlack', 'align' => 'L']),
+    'duracao' => gcwp_get_field_settings('duracao', ['pos_x' => 122, 'pos_y' => 143, 'tamanho' => 25, 'cor' => '#002e67', 'negrito' => '1', 'fonte' => 'ArialCEMTBlack', 'align' => 'L']),
+    'local_data' => gcwp_get_field_settings('local_data', ['pos_x' => 0, 'pos_y' => 160, 'tamanho' => 16, 'cor' => '#000000', 'negrito' => '0', 'fonte' => 'times', 'align' => 'C']),
+    'livro' => gcwp_get_field_settings('livro', ['pos_x' => 93, 'pos_y' => 188, 'tamanho' => 12, 'cor' => '#000000', 'negrito' => '1', 'fonte' => 'ArialCEMTBlack', 'align' => 'L']),
+    'pagina' => gcwp_get_field_settings('pagina', ['pos_x' => 188, 'pos_y' => 188, 'tamanho' => 12, 'cor' => '#000000', 'negrito' => '1', 'fonte' => 'ArialCEMTBlack', 'align' => 'L']),
+    'registro' => gcwp_get_field_settings('registro', ['pos_x' => 260, 'pos_y' => 188, 'tamanho' => 12, 'cor' => '#000000', 'negrito' => '1', 'fonte' => 'ArialCEMTBlack', 'align' => 'L']),
 ];
 
 // Obter fontes disponíveis
@@ -100,8 +99,7 @@ if ($modelo_selecionado_slug) {
                     <div id="draggable-data-inicio" class="draggable-text" data-target-x="data_inicio_pos_x" data-target-y="data_inicio_pos_y">Data de Início</div>
                     <div id="draggable-data-termino" class="draggable-text" data-target-x="data_termino_pos_x" data-target-y="data_termino_pos_y">Data de Término</div>
                     <div id="draggable-duracao" class="draggable-text" data-target-x="duracao_pos_x" data-target-y="duracao_pos_y">Duração (horas)</div>
-                    <div id="draggable-cidade" class="draggable-text" data-target-x="cidade_pos_x" data-target-y="cidade_pos_y">Cidade</div>
-                    <div id="draggable-data-emissao" class="draggable-text" data-target-x="data_emissao_pos_x" data-target-y="data_emissao_pos_y">Data de Emissão</div>
+                    <div id="draggable-local-data" class="draggable-text" data-target-x="local_data_pos_x" data-target-y="local_data_pos_y">Local e Data</div>
                 </div>
             <?php else: ?>
                 <div class="notice notice-warning"><p><?php esc_html_e('Nenhum modelo padrão selecionado ou imagem da frente não encontrada. Selecione um modelo na página "Modelos" para ativar a pré-visualização.', 'gerador-certificados-wp'); ?></p></div>
@@ -132,7 +130,7 @@ if ($modelo_selecionado_slug) {
             <?php
             $front_labels = [
                 'nome' => 'Nome do Participante', 'curso' => 'Curso', 'data_inicio' => 'Data de Início',
-                'data_termino' => 'Data de Término', 'duracao' => 'Duração (horas)', 'cidade' => 'Cidade', 'data_emissao' => 'Data de Emissão'
+                'data_termino' => 'Data de Término', 'duracao' => 'Duração (horas)', 'local_data' => 'Local e Data'
             ];
             foreach ($front_labels as $field => $label):
                 $s = $fields_config[$field];
@@ -208,12 +206,7 @@ if ($modelo_selecionado_slug) {
                         <label><?php esc_html_e('Tam:', 'gerador-certificados-wp'); ?></label> <input type="number" name="<?php echo $field; ?>_tamanho" value="<?php echo esc_attr($s['tamanho']); ?>" class="small-text">
                         <label><?php esc_html_e('Cor:', 'gerador-certificados-wp'); ?></label> <input type="color" name="<?php echo $field; ?>_cor" value="<?php echo esc_attr($s['cor']); ?>">
                         <label><input type="checkbox" name="<?php echo $field; ?>_negrito" value="1" <?php checked($s['negrito'], '1'); ?>> <?php esc_html_e('N', 'gerador-certificados-wp'); ?></label>
-                        <label><?php esc_html_e('Alinhar:', 'gerador-certificados-wp'); ?></label>
-                        <select name="<?php echo $field; ?>_align">
-                            <option value="L" <?php selected($s['align'], 'L'); ?>><?php esc_html_e('Esquerda', 'gerador-certificados-wp'); ?></option>
-                            <option value="C" <?php selected($s['align'], 'C'); ?>><?php esc_html_e('Centro', 'gerador-certificados-wp'); ?></option>
-                            <option value="R" <?php selected($s['align'], 'R'); ?>><?php esc_html_e('Direita', 'gerador-certificados-wp'); ?></option>
-                        </select>
+                        <input type="hidden" name="<?php echo $field; ?>_align" value="L">
                     </span>
                 </td>
             </tr>

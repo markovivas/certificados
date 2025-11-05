@@ -60,9 +60,30 @@ Após a ativação, um novo menu chamado **"Certificados"** aparecerá no seu pa
 
 3.  **Ajustar o Layout**:
     *   Vá para **Certificados > Configurações**.
-    *   Use a área de **"Ajuste Gráfico de Posição"** para arrastar os campos de texto para os locais desejados sobre a imagem do seu modelo.
-    *   Na tabela abaixo, ajuste a **fonte**, **tamanho**, **cor** e **negrito** para cada campo individualmente.
+    *   Nesta página, você pode ajustar a posição e o estilo de cada campo de texto. Use a área de **"Ajuste Gráfico de Posição"** para arrastar os campos para os locais desejados ou insira as coordenadas (X e Y) manualmente.
+    *   Ajuste também a **fonte**, **tamanho**, **cor**, **negrito** e **alinhamento** para cada campo.
     *   Clique em "Salvar Configurações".
+
+    Abaixo, uma sugestão de configuração inicial que pode ser usada como ponto de partida:
+
+    #### **Posição dos Textos (Frente)**
+
+    | Campo                    | X   | Y   | Fonte          | Tamanho | Cor                   | Negrito | Alinhar  |
+    | ------------------------ | --- | --- | -------------- | ------- | --------------------- | ------- | -------- |
+    | **Nome do Participante** | 0   | 57  | ArialCEMTBlack | 35      | Azul escuro (#002e67) | Sim     | Centro   |
+    | **Curso**                | 0   | 90  | ArialCEMTBlack | 35      | Azul escuro (#002e67) | Sim     | Centro   |
+    | **Data de Início**       | 100 | 131 | ArialCEMTBlack | 20      | Azul escuro (#002e67) | Sim     | Esquerda |
+    | **Data de Término**      | 155 | 131 | ArialCEMTBlack | 20      | Azul escuro (#002e67) | Sim     | Esquerda |
+    | **Duração (horas)**      | 122 | 143 | ArialCEMTBlack | 25      | Azul escuro (#002e67) | Sim     | Esquerda |
+    | **Local e Data**         | 0   | 160 | Times          | 16      | Preto                 | Não     | Centro   |
+
+    #### **Posição dos Textos (Verso)**
+
+    | Campo                              | X   | Y   | Fonte          | Tamanho | Cor   | Negrito |
+    | ---------------------------------- | --- | --- | -------------- | ------- | ----- | ------- |
+    | **Número do Livro**                | 93  | 188 | ArialCEMTBlack | 12      | Preto | Sim     |
+    | **Número da Página**               | 188 | 188 | ArialCEMTBlack | 12      | Preto | Sim     |
+    | **Número do Registro/Certificado** | 260 | 188 | ArialCEMTBlack | 12      | Preto | Sim     |
 
 4.  **Cadastrar um Participante**:
     *   Vá para **Certificados > Participantes**.

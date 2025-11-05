@@ -67,7 +67,7 @@ class GCWP_Certificate_Generator {
                 $pos_x = get_option("gcwp_{$field}_pos_x");
                 $pos_y = get_option("gcwp_{$field}_pos_y");
                 $tamanho = get_option("gcwp_{$field}_tamanho");
-                $cor = get_option("gcwp_{$field}_cor");
+                $cor = get_option("gcwp_{$field}_cor", '#000000');
                 $fonte_nome = get_option("gcwp_{$field}_fonte");
                 $negrito = get_option("gcwp_{$field}_negrito");
                 $align = get_option("gcwp_{$field}_align", 'L'); // 'L' como padrão
@@ -82,30 +82,32 @@ class GCWP_Certificate_Generator {
                 $estilo = $negrito == '1' ? 'B' : '';
                 $pdf->SetFont($fonte_nome, $estilo, $tamanho);
                 $pdf->SetTextColorArray($this->hex2rgb($cor, true));
-                $pdf->SetXY($pos_x, $pos_y);
 
-                // Para alinhamento central ou à direita, a largura da célula precisa ser definida.
-                // 0 significa que vai até a margem direita.
-                // Se o alinhamento for 'C' ou 'R', a posição X deve ser 0 para alinhar em relação à página inteira.
-                $cell_width = ($align === 'C' || $align === 'R') ? 297 : 0; // Largura A4 paisagem
-                $current_x = ($align === 'C' || $align === 'R') ? 0 : $pos_x;
+                // Define a posição Y
+                $pdf->SetY($pos_y);
+
+                // Para alinhamento 'L', a coordenada X é usada.
+                // Para 'C' e 'R', a coordenada X é ignorada e o alinhamento é relativo à página.
+                $current_x = ($align === 'L') ? $pos_x : 0;
                 $pdf->SetX($current_x);
-                
-                $pdf->Cell($cell_width, 0, $text, 0, 0, $align);
+
+                // A largura da célula (0) faz com que ela se estenda até a margem direita, permitindo o alinhamento.
+                $pdf->Cell(0, 0, $text, 0, 0, $align);
             };
 
             // Formatar datas
             $data_inicio_f = date_i18n('d/m/Y', strtotime($participant->data_inicio));
             $data_termino_f = date_i18n('d/m/Y', strtotime($participant->data_termino));
-            $data_emissao_f = date_i18n('d \d\e F \d\e Y', strtotime($participant->data_emissao));
+            $data_emissao_f = date_i18n('d \d\e F \d\e Y', strtotime($participant->data_emissao)); // Ex: 04 de novembro de 2025
+            $local_data_f = sprintf('%s, %s', $participant->cidade, $data_emissao_f);
+
             // Escrever campos da frente
             $write_text('nome', mb_strtoupper($participant->nome_completo, 'UTF-8'));
             $write_text('curso', mb_strtoupper($participant->curso, 'UTF-8'));
             $write_text('data_inicio', $data_inicio_f);
             $write_text('data_termino', $data_termino_f);
             $write_text('duracao', $participant->duracao_horas);
-            $write_text('cidade', $participant->cidade);
-            $write_text('data_emissao', $data_emissao_f);
+            $write_text('local_data', $local_data_f);
             
             // Adicionar verso se existir
             if (!empty($template_back) && file_exists($template_back)) {
