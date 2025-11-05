@@ -1,0 +1,15 @@
+# Ignorar dependências instaladas pelo Composer
+/vendor/
+
+# Arquivos de sistema/IDE
+.vscode/
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs
+*.log
+
+# Arquivos temporários do sistema
+*.swp
+*.tmp
