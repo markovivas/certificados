@@ -1,5 +1,64 @@
 # Gerador de Certificados WP
 
+Versão: 1.0.0
+
+Plugin para gerar certificados em PDF (frente/verso) a partir do painel e também via área pública para usuários com a role "Assinante".
+
+Principais funcionalidades
+
+- Gerenciamento de modelos (admin): upload de imagens A4 para frente/verso e gerenciamento via painel do WordPress.
+- Gerenciamento de participantes (admin + assinante via front-end): cadastro, edição e exclusão.
+- Emissão de certificados (admin + assinante via front-end): gera PDF usando TCPDF/FPDI e salva em uploads/certificados/emitidos.
+- Shortcodes públicos (para assinantes):
+  - `[gerador_certificados_participantes]` — interface front-end para gerenciar participantes.
+  - `[gerador_certificados_emissao]` — interface front-end para emitir certificados.
+
+Segurança e permissões
+
+- Nonces usados em formulários públicos (`gcwp_public_actions`).
+- Verificação de capabilities: apenas usuários com a role `subscriber` podem acessar os shortcodes públicos.
+- Cada participante é vinculado ao `user_id` do assinante que o criou — assinantes só veem/edita/excluem os seus próprios participantes.
+
+Arquivos importantes
+
+- `gerador-certificados-wp.php` — arquivo principal do plugin.
+- `certificate-generator.php` — classe que gera o PDF (TCPDF + FPDI).
+- `class-participants-list-table.php` — tabela administrativa dos participantes (WP_List_Table).
+- `admin-menu.php`, `page-*.php` — páginas do admin para gestão de modelos, emissão e configurações.
+- `public/class-gcwp-public.php` — shortcodes e handlers AJAX públicos (assinantes).
+- `public/public.js` — scripts JS para os shortcodes públicos.
+- `public/public.css` — estilos usados pela interface pública.
+
+Como usar (rápido)
+
+1. Ative o plugin.
+2. Crie duas páginas no WordPress e cole os shortcodes:
+
+```
+[gerador_certificados_participantes]
+[gerador_certificados_emissao]
+```
+
+3. Faça login com um usuário `Subscriber` e acesse as páginas para gerenciar participantes e emitir certificados sem entrar no painel.
+
+Notas técnicas
+
+- Bibliotecas necessárias: `tecnickcom/tcpdf` e `setasign/fpdi` (via Composer). O plugin checa se `vendor/autoload.php` existe.
+- Ao ativar o plugin é criada a tabela `wp_gcwp_participantes` (prefixo pode variar). Uma coluna `user_id` é adicionada automaticamente para conectar participantes aos assinantes.
+- Modelos (frente/verso) são armazenados em: `/wp-content/uploads/certificados/modelos/<slug>/frente.*` e `verso.*`.
+- Certificados gerados ficam em: `/wp-content/uploads/certificados/emitidos/`.
+
+Próximos passos sugeridos
+
+- Histórico de certificados por assinante (tabela própria) — opcional para exibir emissão anterior.
+- Proteção de downloads (proteger arquivos gerados por acesso público) — caso necessário.
+- Importação CSV via front-end (removida temporariamente da interface pública; implementação futura).
+
+Suporte
+
+Se precisar que eu ajuste o layout, adicione histórico ou proteja os PDFs por login, posso implementar nas próximas iterações.
+# Gerador de Certificados WP
+
 **Versão:** 1.0.0
 **Autor:** (Seu Nome)
 **Requer PHP:** 8.0+

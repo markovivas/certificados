@@ -55,13 +55,27 @@ function gcwp_activate() {
 register_activation_hook( __FILE__, 'gcwp_activate' );
 
 /**
+ * Load core classes used both in admin and public.
+ */
+require_once GCWP_PLUGIN_DIR . 'certificate-generator.php';
+
+/**
  * Load admin menu and other admin-related functionalities.
  */
 if ( is_admin() ) {
     // Includes
-    require_once GCWP_PLUGIN_DIR . 'certificate-generator.php';
     require_once GCWP_PLUGIN_DIR . 'class-participants-list-table.php';
     require_once GCWP_PLUGIN_DIR . 'admin-menu.php';
+}
+
+/**
+ * Load public (front-end) features for subscribers.
+ */
+if ( file_exists( GCWP_PLUGIN_DIR . 'public/class-gcwp-public.php' ) ) {
+    require_once GCWP_PLUGIN_DIR . 'public/class-gcwp-public.php';
+    if ( class_exists( 'GCWP_Public' ) ) {
+        GCWP_Public::init();
+    }
 }
 
 /**
