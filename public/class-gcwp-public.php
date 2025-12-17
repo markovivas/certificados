@@ -30,7 +30,7 @@ class GCWP_Public {
 
     public static function shortcode_participantes( $atts ) {
         if ( ! is_user_logged_in() || ! current_user_can( 'subscriber' ) ) {
-            return self::render_access_denied();
+            return ''; // Não mostrar mensagem, apenas ocultar o conteúdo
         }
 
         ob_start();

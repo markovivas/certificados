@@ -44,7 +44,8 @@ Um plugin para WordPress que permite criar, personalizar e gerar certificados em
 
 *   **Segurança**:
     *   Apenas usuários logados com role "Subscriber" ou superior podem acessar os shortcodes.
-    *   Mensagem de acesso negado estilizada com link para login e redirecionamento automático após autenticação.
+    *   O shortcode `[gerador_certificados_participantes]` fica oculto para usuários não autorizados (sem mensagem).
+    *   O shortcode `[gerador_certificados_emissao]` mostra mensagem de acesso negado estilizada com link para login e redirecionamento automático após autenticação.
     *   Nonces utilizados em formulários para proteção CSRF.
     *   Validação de dados e sanitização.
 
