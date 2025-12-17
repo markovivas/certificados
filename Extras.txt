@@ -1,0 +1,6 @@
+HTML Wordpress na página
+
+<center><div class="gcwp-public-wrap">
+    [gerador_certificados_participantes]
+    [gerador_certificados_emissao]
+</div>
