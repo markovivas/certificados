@@ -103,6 +103,21 @@ Sugestão de configuração inicial (veja tabela no README original).
 *   Crie páginas com os shortcodes `[gerador_certificados_participantes]` e `[gerador_certificados_emissao]`.
 *   Usuários com role "Subscriber" podem gerenciar participantes e emitir certificados via front-end.
 
+#### Exemplo de Implementação HTML
+Para uma melhor organização visual, envolva os shortcodes em uma div com a classe do plugin:
+
+```html
+<div class="gcwp-public-wrap">
+    <h2>Gerenciar Participantes</h2>
+    [gerador_certificados_participantes]
+    
+    <h2>Emitir Certificados</h2>
+    [gerador_certificados_emissao]
+</div>
+```
+
+Isso garante que os estilos do plugin sejam aplicados corretamente e mantém consistência visual.
+
 ---
 
 ## Estrutura de Arquivos Importante
