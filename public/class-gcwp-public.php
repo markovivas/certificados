@@ -1,8 +1,4 @@
 <?php
-/**
- * Public-facing functionality for Gerador de Certificados WP
- * Shortcodes and AJAX endpoints for subscribers (role: subscriber)
- */
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -11,465 +7,332 @@ if ( ! defined( 'ABSPATH' ) ) {
 class GCWP_Public {
 
     public static function init() {
-        // Shortcodes
-        add_action( 'init', array( __CLASS__, 'register_shortcodes' ) );
-
-        // Enqueue frontend assets
-        add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_scripts' ) );
-
-        // AJAX handlers (logged-in only)
-        add_action( 'wp_ajax_gcwp_public_save_participant', array( __CLASS__, 'ajax_save_participant' ) );
-        add_action( 'wp_ajax_gcwp_public_delete_participant', array( __CLASS__, 'ajax_delete_participant' ) );
-        add_action( 'wp_ajax_gcwp_public_import_participants', array( __CLASS__, 'ajax_import_participants' ) );
-        add_action( 'wp_ajax_gcwp_public_issue_certificate', array( __CLASS__, 'ajax_issue_certificate' ) );
-
-        // Ensure participant table has user_id column to link participants to subscribers
-        add_action( 'init', array( __CLASS__, 'maybe_add_user_id_column' ) );
-    }
-
-    public static function register_shortcodes() {
-        add_shortcode( 'gerador_certificados_participantes', array( __CLASS__, 'shortcode_participantes' ) );
-        add_shortcode( 'gerador_certificados_emissao', array( __CLASS__, 'shortcode_emissao' ) );
+        add_shortcode( 'gerador_certificados_participantes', [ __CLASS__, 'shortcode_participantes' ] );
+        add_shortcode( 'gerador_certificados_emissao', [ __CLASS__, 'shortcode_emissao' ] );
+        add_action( 'wp_enqueue_scripts', [ __CLASS__, 'enqueue_scripts' ] );
+        add_action( 'wp_ajax_gcwp_public_save_participant', [ __CLASS__, 'handle_save_participant' ] );
+        add_action( 'wp_ajax_gcwp_public_generate_certificate', [ __CLASS__, 'handle_generate_certificate' ] );
     }
 
     public static function enqueue_scripts() {
-        if ( ! is_user_logged_in() ) {
+        if ( ! is_user_logged_in() || ! current_user_can( 'subscriber' ) ) {
             return;
         }
 
-        wp_enqueue_style( 'gcwp-public-style', GCWP_PLUGIN_URL . 'public/public.css', array(), GCWP_VERSION );
-        wp_enqueue_script( 'gcwp-public-script', GCWP_PLUGIN_URL . 'public/public.js', array( 'jquery' ), GCWP_VERSION, true );
-        wp_localize_script( 'gcwp-public-script', 'gcwp_public', array(
+        wp_enqueue_style( 'gcwp-public-style', GCWP_PLUGIN_URL . 'assets/css/public.css', [], GCWP_VERSION );
+        wp_enqueue_script( 'gcwp-public-script', GCWP_PLUGIN_URL . 'assets/js/public.js', [ 'jquery' ], GCWP_VERSION, true );
+
+        wp_localize_script( 'gcwp-public-script', 'gcwp_public_ajax', [
             'ajax_url' => admin_url( 'admin-ajax.php' ),
-            'nonce'    => wp_create_nonce( 'gcwp_public_actions' ),
-        ) );
+            'nonce' => wp_create_nonce( 'gcwp_public_actions' ),
+        ] );
     }
 
-    /**
-     * Ensure participants table has user_id column (idempotent)
-     */
-    public static function maybe_add_user_id_column() {
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'gcwp_participantes';
-
-        // Check if table exists
-        $row = $wpdb->get_row( $wpdb->prepare( "SHOW COLUMNS FROM {$table_name} LIKE %s", 'user_id' ) );
-        if ( $row === null ) {
-            // Add column
-            $wpdb->query( "ALTER TABLE {$table_name} ADD COLUMN user_id bigint(20) DEFAULT 0 NOT NULL AFTER id" );
-        }
-    }
-
-    private static function check_access() {
-        if ( ! is_user_logged_in() ) {
-            return new WP_Error( 'not_logged_in', __( 'Acesso negado. Faça login para continuar.', 'gerador-certificados-wp' ) );
+    public static function shortcode_participantes( $atts ) {
+        if ( ! is_user_logged_in() || ! current_user_can( 'subscriber' ) ) {
+            return self::render_access_denied();
         }
 
-        $user = wp_get_current_user();
-        if ( ! in_array( 'subscriber', (array) $user->roles, true ) ) {
-            return new WP_Error( 'forbidden', __( 'Acesso negado. Área exclusiva para assinantes.', 'gerador-certificados-wp' ) );
-        }
-
-        return $user;
-    }
-
-    /**
-     * Shortcode: Gerenciamento de Participantes
-     */
-    public static function shortcode_participantes( $atts = array() ) {
-        $access = self::check_access();
-        if ( is_wp_error( $access ) ) {
-            return '<div class="gcwp-alert gcwp-alert-error">' . esc_html( $access->get_error_message() ) . '</div>';
-        }
-
-        $user = $access;
         ob_start();
+        self::render_participantes_interface();
+        return ob_get_clean();
+    }
+
+    public static function shortcode_emissao( $atts ) {
+        if ( ! is_user_logged_in() || ! current_user_can( 'subscriber' ) ) {
+            return self::render_access_denied();
+        }
+
+        ob_start();
+        self::render_emissao_interface();
+        return ob_get_clean();
+    }
+
+    private static function render_access_denied() {
+        $login_url = wp_login_url( get_permalink() );
+        ob_start();
+        ?>
+        <div class="gcwp-access-denied">
+            <div class="gcwp-access-denied-icon">
+                <span class="dashicons dashicons-lock"></span>
+            </div>
+            <h3><?php _e( 'Acesso Restrito', 'gerador-certificados-wp' ); ?></h3>
+            <p><?php _e( 'Você precisa estar logado como assinante para acessar esta página.', 'gerador-certificados-wp' ); ?></p>
+            <a href="<?php echo esc_url( $login_url ); ?>" class="button button-primary gcwp-login-btn">
+                <span class="dashicons dashicons-admin-users"></span> <?php _e( 'Fazer Login', 'gerador-certificados-wp' ); ?>
+            </a>
+            <p class="gcwp-access-denied-note">
+                <?php _e( 'Após o login, você será redirecionado de volta para esta página.', 'gerador-certificados-wp' ); ?>
+            </p>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    private static function render_participantes_interface() {
+        $participants = \GCWP\Database\ParticipantsTable::get_participants( 1000 );
+
         ?>
         <div class="gcwp-public-wrap">
             <div class="gcwp-header">
-                <h2><?php esc_html_e( 'Meus Participantes', 'gerador-certificados-wp' ); ?></h2>
-                <div class="gcwp-actions-header">
-                    <button class="button button-primary" id="gcwp-new-participant"><?php esc_html_e( 'Novo Participante', 'gerador-certificados-wp' ); ?></button>
-                </div>
+                <h2><?php _e( 'Gerenciar Participantes', 'gerador-certificados-wp' ); ?></h2>
+                <button id="gcwp-add-participant-btn" class="button button-primary gcwp-add-btn">
+                    <span class="dashicons dashicons-plus"></span> <?php _e( 'Adicionar Participante', 'gerador-certificados-wp' ); ?>
+                </button>
             </div>
 
-            <div id="gcwp-message" role="status" aria-live="polite"></div>
+            <div id="gcwp-participants-list" class="gcwp-participants-section">
+                <?php if ( ! empty( $participants ) ) : ?>
+                    <div class="gcwp-table-container">
+                        <table class="wp-list-table widefat fixed striped gcwp-participants-table">
+                            <thead>
+                                <tr>
+                                    <th><?php _e( 'Nome Completo', 'gerador-certificados-wp' ); ?></th>
+                                    <th><?php _e( 'E-mail', 'gerador-certificados-wp' ); ?></th>
+                                    <th><?php _e( 'Curso', 'gerador-certificados-wp' ); ?></th>
+                                    <th><?php _e( 'Data de Emissão', 'gerador-certificados-wp' ); ?></th>
+                                    <?php if ( current_user_can( 'manage_options' ) ) : ?>
+                                        <th><?php _e( 'Ações', 'gerador-certificados-wp' ); ?></th>
+                                    <?php endif; ?>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ( $participants as $participant ) : ?>
+                                    <tr>
+                                        <td><?php echo esc_html( $participant['nome_completo'] ); ?></td>
+                                        <td><?php echo esc_html( $participant['email'] ); ?></td>
+                                        <td><?php echo esc_html( $participant['curso'] ); ?></td>
+                                        <td><?php echo esc_html( date_i18n( get_option( 'date_format' ), strtotime( $participant['data_emissao'] ) ) ); ?></td>
+                                        <?php if ( current_user_can( 'manage_options' ) ) : ?>
+                                            <td class="gcwp-actions">
+                                                <button class="button button-secondary edit-participant" data-id="<?php echo esc_attr( $participant['id'] ); ?>" title="<?php _e( 'Editar', 'gerador-certificados-wp' ); ?>">
+                                                    <span class="dashicons dashicons-edit"></span>
+                                                </button>
+                                                <button class="button button-secondary delete-participant" data-id="<?php echo esc_attr( $participant['id'] ); ?>" title="<?php _e( 'Excluir', 'gerador-certificados-wp' ); ?>">
+                                                    <span class="dashicons dashicons-trash"></span>
+                                                </button>
+                                            </td>
+                                        <?php endif; ?>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php else : ?>
+                    <div class="gcwp-no-participants">
+                        <p><?php _e( 'Nenhum participante cadastrado ainda.', 'gerador-certificados-wp' ); ?></p>
+                        <p><?php _e( 'Clique em "Adicionar Participante" para começar.', 'gerador-certificados-wp' ); ?></p>
+                    </div>
+                <?php endif; ?>
+            </div>
 
-            <div class="gcwp-grid">
-                <div class="gcwp-panel gcwp-panel-form">
-                    <form id="gcwp-participant-form" method="post">
-                        <?php wp_nonce_field( 'gcwp_public_actions', 'gcwp_public_nonce' ); ?>
-                        <input type="hidden" name="action" value="gcwp_public_save_participant" />
-                        <input type="hidden" name="id" id="gcwp-participant-id" value="0" />
+            <div id="gcwp-participant-form" class="gcwp-form-section" style="display: none;">
+                <div class="gcwp-form-header">
+                    <h3 id="gcwp-form-title"><?php _e( 'Adicionar Novo Participante', 'gerador-certificados-wp' ); ?></h3>
+                    <button type="button" id="gcwp-close-form" class="button gcwp-close-btn" title="<?php _e( 'Fechar', 'gerador-certificados-wp' ); ?>">
+                        <span class="dashicons dashicons-no"></span>
+                    </button>
+                </div>
+                <form id="gcwp-participant-form-data" class="gcwp-form">
+                    <input type="hidden" name="participant_id" value="">
 
+                    <div class="gcwp-form-row">
+                        <div class="gcwp-form-group">
+                            <label for="nome_completo"><?php _e( 'Nome Completo', 'gerador-certificados-wp' ); ?> <span class="required">*</span></label>
+                            <input type="text" name="nome_completo" id="nome_completo" required>
+                        </div>
+                        <div class="gcwp-form-group">
+                            <label for="email"><?php _e( 'E-mail', 'gerador-certificados-wp' ); ?> <span class="required">*</span></label>
+                            <input type="email" name="email" id="email" required>
+                        </div>
+                    </div>
+
+                    <div class="gcwp-form-row">
+                        <div class="gcwp-form-group">
+                            <label for="curso"><?php _e( 'Curso', 'gerador-certificados-wp' ); ?> <span class="required">*</span></label>
+                            <input type="text" name="curso" id="curso" required>
+                        </div>
+                        <div class="gcwp-form-group">
+                            <label for="cidade"><?php _e( 'Cidade', 'gerador-certificados-wp' ); ?> <span class="required">*</span></label>
+                            <input type="text" name="cidade" id="cidade" required>
+                        </div>
+                    </div>
+
+                    <div class="gcwp-form-row">
+                        <div class="gcwp-form-group">
+                            <label for="data_inicio"><?php _e( 'Data de Início', 'gerador-certificados-wp' ); ?> <span class="required">*</span></label>
+                            <input type="date" name="data_inicio" id="data_inicio" required>
+                        </div>
+                        <div class="gcwp-form-group">
+                            <label for="data_termino"><?php _e( 'Data de Término', 'gerador-certificados-wp' ); ?> <span class="required">*</span></label>
+                            <input type="date" name="data_termino" id="data_termino" required>
+                        </div>
+                        <div class="gcwp-form-group">
+                            <label for="duracao_horas"><?php _e( 'Duração (Horas)', 'gerador-certificados-wp' ); ?> <span class="required">*</span></label>
+                            <input type="number" name="duracao_horas" id="duracao_horas" required min="1">
+                        </div>
+                    </div>
+
+                    <div class="gcwp-form-row">
+                        <div class="gcwp-form-group">
+                            <label for="data_emissao"><?php _e( 'Data de Emissão', 'gerador-certificados-wp' ); ?> <span class="required">*</span></label>
+                            <input type="date" name="data_emissao" id="data_emissao" required>
+                        </div>
+                        <div class="gcwp-form-group">
+                            <label for="numero_certificado"><?php _e( 'Número do Certificado', 'gerador-certificados-wp' ); ?></label>
+                            <input type="text" name="numero_certificado" id="numero_certificado">
+                        </div>
+                    </div>
+
+                    <div class="gcwp-form-row">
+                        <div class="gcwp-form-group">
+                            <label for="numero_livro"><?php _e( 'Número do Livro', 'gerador-certificados-wp' ); ?></label>
+                            <input type="text" name="numero_livro" id="numero_livro">
+                        </div>
+                        <div class="gcwp-form-group">
+                            <label for="numero_pagina"><?php _e( 'Número da Página', 'gerador-certificados-wp' ); ?></label>
+                            <input type="text" name="numero_pagina" id="numero_pagina">
+                        </div>
+                    </div>
+
+                    <div class="gcwp-form-actions">
+                        <input type="submit" name="submit" id="submit" class="button button-primary" value="<?php _e( 'Salvar Participante', 'gerador-certificados-wp' ); ?>">
+                        <button type="button" id="gcwp-cancel-edit" class="button"><?php _e( 'Cancelar', 'gerador-certificados-wp' ); ?></button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <?php
+    }
+
+    private static function render_emissao_interface() {
+        $participants = \GCWP\Database\ParticipantsTable::get_participants( 1000 );
+
+        // Fetch available models
+        $upload_dir = wp_upload_dir();
+        $modelos_dir = $upload_dir['basedir'] . '/certificados/modelos';
+        $modelos = [];
+        if ( is_dir( $modelos_dir ) ) {
+            $modelos_dirs = array_filter( scandir( $modelos_dir ), function( $item ) use ( $modelos_dir ) {
+                return is_dir( $modelos_dir . '/' . $item ) && ! in_array( $item, [ '.', '..', 'frente', 'verso' ] );
+            } );
+            foreach ( $modelos_dirs as $modelo_slug ) {
+                $modelo_nome = ucwords( str_replace( '-', ' ', $modelo_slug ) );
+                $frente_files = glob( $modelos_dir . '/' . $modelo_slug . '/frente.*' );
+                if ( ! empty( $frente_files ) ) {
+                    $modelos[ $modelo_slug ] = $modelo_nome;
+                }
+            }
+        }
+
+        ?>
+        <div class="gcwp-public-wrap">
+            <div class="gcwp-header">
+                <h2><?php _e( 'Emitir Certificados', 'gerador-certificados-wp' ); ?></h2>
+            </div>
+
+            <div class="gcwp-emissao-section">
+                <div class="gcwp-emissao-form-container">
+                    <h3><?php _e( 'Gerar Novo Certificado', 'gerador-certificados-wp' ); ?></h3>
+                    <form id="gcwp-generate-certificate-form" class="gcwp-emissao-form">
                         <div class="gcwp-form-row">
-                            <label><?php esc_html_e( 'Nome completo', 'gerador-certificados-wp' ); ?>
-                                <input type="text" name="nome_completo" id="nome_completo" required />
-                            </label>
+                            <div class="gcwp-form-group">
+                                <label for="participant_id"><?php _e( 'Selecione o Participante', 'gerador-certificados-wp' ); ?> <span class="required">*</span></label>
+                                <select name="participant_id" id="participant_id" required>
+                                    <option value=""><?php _e( 'Selecione um participante', 'gerador-certificados-wp' ); ?></option>
+                                    <?php foreach ( $participants as $participant ) : ?>
+                                        <option value="<?php echo esc_attr( $participant['id'] ); ?>"><?php echo esc_html( $participant['nome_completo'] ); ?> - <?php echo esc_html( $participant['curso'] ); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="gcwp-form-group">
+                                <label for="modelo_slug"><?php _e( 'Selecione o Modelo', 'gerador-certificados-wp' ); ?> <span class="required">*</span></label>
+                                <select name="modelo_slug" id="modelo_slug" required>
+                                    <option value=""><?php _e( 'Selecione um modelo', 'gerador-certificados-wp' ); ?></option>
+                                    <?php foreach ( $modelos as $slug => $nome ) : ?>
+                                        <option value="<?php echo esc_attr( $slug ); ?>"><?php echo esc_html( $nome ); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
                         </div>
-
-                        <div class="gcwp-form-row gcwp-form-three">
-                            <label><?php esc_html_e( 'E-mail', 'gerador-certificados-wp' ); ?>
-                                <input type="email" name="email" id="email" />
-                            </label>
-                            <label><?php esc_html_e( 'Curso', 'gerador-certificados-wp' ); ?>
-                                <input type="text" name="curso" id="curso" />
-                            </label>
-                            <label><?php esc_html_e( 'Cidade', 'gerador-certificados-wp' ); ?>
-                                <input type="text" name="cidade" id="cidade" />
-                            </label>
-                        </div>
-
-                        <div class="gcwp-form-row gcwp-form-three">
-                            <label><?php esc_html_e( 'Data Início', 'gerador-certificados-wp' ); ?>
-                                <input type="date" name="data_inicio" id="data_inicio" />
-                            </label>
-                            <label><?php esc_html_e( 'Data Término', 'gerador-certificados-wp' ); ?>
-                                <input type="date" name="data_termino" id="data_termino" />
-                            </label>
-                            <label><?php esc_html_e( 'Duração (horas)', 'gerador-certificados-wp' ); ?>
-                                <input type="number" name="duracao_horas" id="duracao_horas" min="0" />
-                            </label>
-                        </div>
-
-                        <div class="gcwp-form-row gcwp-form-three">
-                            <label><?php esc_html_e( 'Data Emissão', 'gerador-certificados-wp' ); ?>
-                                <input type="date" name="data_emissao" id="data_emissao" />
-                            </label>
-                            <label><?php esc_html_e( 'Número Livro', 'gerador-certificados-wp' ); ?>
-                                <input type="text" name="numero_livro" id="numero_livro" />
-                            </label>
-                            <label><?php esc_html_e( 'Número Página', 'gerador-certificados-wp' ); ?>
-                                <input type="text" name="numero_pagina" id="numero_pagina" />
-                            </label>
-                        </div>
-
-                        <div class="gcwp-form-row">
-                            <label><?php esc_html_e( 'Número Certificado', 'gerador-certificados-wp' ); ?>
-                                <input type="text" name="numero_certificado" id="numero_certificado" />
-                            </label>
-                        </div>
-
                         <div class="gcwp-form-actions">
-                            <button type="submit" class="button button-primary" id="gcwp-save-participant"><?php esc_html_e( 'Salvar', 'gerador-certificados-wp' ); ?></button>
-                            <button type="button" class="button" id="gcwp-cancel-edit" style="display:none;"><?php esc_html_e( 'Cancelar', 'gerador-certificados-wp' ); ?></button>
+                            <input type="submit" class="button button-primary gcwp-generate-btn" value="<?php _e( 'Gerar Certificado', 'gerador-certificados-wp' ); ?>">
                         </div>
                     </form>
                 </div>
 
-                <div class="gcwp-panel gcwp-panel-list">
-                    <h3><?php esc_html_e( 'Lista de Participantes', 'gerador-certificados-wp' ); ?></h3>
-                    <div id="gcwp-participants-list">
-                        <?php echo self::render_participants_table( $user->ID ); // phpcs:ignore ?>
-                    </div>
+                <div id="gcwp-certificate-result" class="gcwp-result-section" style="display: none;">
+                    <h3><?php _e( 'Resultado', 'gerador-certificados-wp' ); ?></h3>
+                    <div id="gcwp-result-content"></div>
                 </div>
             </div>
         </div>
         <?php
-        return ob_get_clean();
     }
 
-    private static function render_participants_table( $user_id ) {
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'gcwp_participantes';
+    public static function handle_save_participant() {
+        check_ajax_referer( 'gcwp_public_actions', 'nonce' );
 
-        $rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table_name} WHERE user_id = %d ORDER BY nome_completo ASC", $user_id ), ARRAY_A );
-
-        if ( empty( $rows ) ) {
-            return '<p>' . esc_html__( 'Nenhum participante encontrado.', 'gerador-certificados-wp' ) . '</p>';
+        if ( ! is_user_logged_in() || ! current_user_can( 'subscriber' ) ) {
+            wp_die( __( 'Acesso negado.', 'gerador-certificados-wp' ) );
         }
 
-        ob_start();
-        ?>
-        <div class="gcwp-cards">
-        <?php foreach ( $rows as $r ) : ?>
-            <article class="gcwp-card" data-id="<?php echo esc_attr( $r['id'] ); ?>"
-                     data-nome="<?php echo esc_attr( $r['nome_completo'] ); ?>"
-                     data-email="<?php echo esc_attr( $r['email'] ); ?>"
-                     data-curso="<?php echo esc_attr( $r['curso'] ); ?>"
-                     data-data_inicio="<?php echo esc_attr( $r['data_inicio'] ); ?>"
-                     data-data_termino="<?php echo esc_attr( $r['data_termino'] ); ?>"
-                     data-duracao_horas="<?php echo esc_attr( $r['duracao_horas'] ); ?>"
-                     data-cidade="<?php echo esc_attr( $r['cidade'] ); ?>"
-                     data-data_emissao="<?php echo esc_attr( $r['data_emissao'] ); ?>"
-                     data-numero_livro="<?php echo esc_attr( $r['numero_livro'] ); ?>"
-                     data-numero_pagina="<?php echo esc_attr( $r['numero_pagina'] ); ?>"
-                     data-numero_certificado="<?php echo esc_attr( $r['numero_certificado'] ); ?>">
-                <h4 class="gcwp-card-title"><?php echo esc_html( $r['nome_completo'] ); ?></h4>
-                <div class="gcwp-card-meta">
-                    <span class="gcwp-card-course"><?php echo esc_html( $r['curso'] ); ?></span>
-                    <span class="gcwp-card-email"><?php echo esc_html( $r['email'] ); ?></span>
-                </div>
-                <div class="gcwp-card-actions">
-                    <button class="button gcwp-edit" data-id="<?php echo esc_attr( $r['id'] ); ?>"><?php esc_html_e( 'Editar', 'gerador-certificados-wp' ); ?></button>
-                    <button class="button gcwp-delete" data-id="<?php echo esc_attr( $r['id'] ); ?>"><?php esc_html_e( 'Excluir', 'gerador-certificados-wp' ); ?></button>
-                </div>
-            </article>
-        <?php endforeach; ?>
-        </div>
-        <?php
-        return ob_get_clean();
-    }
+        // $user_id = get_current_user_id();
+        $data = [
+            // 'user_id' => $user_id,
+            'nome_completo' => sanitize_text_field( $_POST['nome_completo'] ),
+            'email' => sanitize_email( $_POST['email'] ),
+            'curso' => sanitize_text_field( $_POST['curso'] ),
+            'data_inicio' => sanitize_text_field( $_POST['data_inicio'] ),
+            'data_termino' => sanitize_text_field( $_POST['data_termino'] ),
+            'duracao_horas' => intval( $_POST['duracao_horas'] ),
+            'cidade' => sanitize_text_field( $_POST['cidade'] ),
+            'data_emissao' => sanitize_text_field( $_POST['data_emissao'] ),
+            'numero_livro' => sanitize_text_field( $_POST['numero_livro'] ),
+            'numero_pagina' => sanitize_text_field( $_POST['numero_pagina'] ),
+            'numero_certificado' => sanitize_text_field( $_POST['numero_certificado'] ),
+        ];
 
-    /**
-     * Shortcode: Emissão de certificados
-     */
-    public static function shortcode_emissao( $atts = array() ) {
-        $access = self::check_access();
-        if ( is_wp_error( $access ) ) {
-            return '<div class="gcwp-alert gcwp-alert-error">' . esc_html( $access->get_error_message() ) . '</div>';
-        }
-
-        $user = $access;
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'gcwp_participantes';
-        $participants = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table_name} WHERE user_id = %d ORDER BY nome_completo ASC", $user->ID ), ARRAY_A );
-
-        // List available models (read-only)
-        $upload_dir = wp_upload_dir();
-        $modelos_dir = $upload_dir['basedir'] . '/certificados/modelos';
-        $models = array();
-        if ( is_dir( $modelos_dir ) ) {
-            $items = scandir( $modelos_dir );
-            foreach ( $items as $it ) {
-                if ( $it === '.' || $it === '..' ) {
-                    continue;
-                }
-                if ( is_dir( $modelos_dir . '/' . $it ) ) {
-                    $models[] = $it;
-                }
-            }
-        }
-
-        ob_start();
-        ?>
-        <div class="gcwp-public-wrap">
-            <h2><?php esc_html_e( 'Emissão de Certificados', 'gerador-certificados-wp' ); ?></h2>
-            <div id="gcwp-emissao-message"></div>
-
-            <form id="gcwp-emissao-form" method="post">
-                <?php wp_nonce_field( 'gcwp_public_actions', 'gcwp_public_nonce' ); ?>
-                <input type="hidden" name="action" value="gcwp_public_issue_certificate" />
-
-                <p>
-                    <label><?php esc_html_e( 'Participante', 'gerador-certificados-wp' ); ?><br />
-                        <select name="participante_id" required>
-                            <option value=""><?php esc_html_e( 'Selecione um participante', 'gerador-certificados-wp' ); ?></option>
-                            <?php foreach ( $participants as $p ) : ?>
-                                <option value="<?php echo esc_attr( $p['id'] ); ?>"><?php echo esc_html( $p['nome_completo'] ); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </label>
-                </p>
-
-                <p>
-                    <label><?php esc_html_e( 'Modelo', 'gerador-certificados-wp' ); ?><br />
-                        <select name="modelo_id" required>
-                            <option value=""><?php esc_html_e( 'Selecione um modelo', 'gerador-certificados-wp' ); ?></option>
-                            <?php foreach ( $models as $m ) : ?>
-                                <option value="<?php echo esc_attr( $m ); ?>"><?php echo esc_html( $m ); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </label>
-                </p>
-
-                <p>
-                    <button type="submit" class="button button-primary"><?php esc_html_e( 'Gerar certificado', 'gerador-certificados-wp' ); ?></button>
-                </p>
-            </form>
-
-            <div id="gcwp-emissao-result"></div>
-        </div>
-        <?php
-        return ob_get_clean();
-    }
-
-    /* ---------------- AJAX Handlers ---------------- */
-
-    public static function ajax_save_participant() {
-        // Check nonce and permissions
-        if ( ! isset( $_POST['gcwp_public_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gcwp_public_nonce'] ) ), 'gcwp_public_actions' ) ) {
-            wp_send_json_error( array( 'message' => __( 'Erro de segurança (nonce).', 'gerador-certificados-wp' ) ) );
-        }
-
-        $access = self::check_access();
-        if ( is_wp_error( $access ) ) {
-            wp_send_json_error( array( 'message' => $access->get_error_message() ) );
-        }
-        $user = $access;
-
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'gcwp_participantes';
-
-        $id = isset( $_POST['id'] ) ? intval( $_POST['id'] ) : 0;
-        $data = array(
-            'nome_completo'      => isset( $_POST['nome_completo'] ) ? sanitize_text_field( wp_unslash( $_POST['nome_completo'] ) ) : '',
-            'email'              => isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '',
-            'curso'              => isset( $_POST['curso'] ) ? sanitize_text_field( wp_unslash( $_POST['curso'] ) ) : '',
-            'data_inicio'        => isset( $_POST['data_inicio'] ) ? sanitize_text_field( wp_unslash( $_POST['data_inicio'] ) ) : '0000-00-00',
-            'data_termino'       => isset( $_POST['data_termino'] ) ? sanitize_text_field( wp_unslash( $_POST['data_termino'] ) ) : '0000-00-00',
-            'duracao_horas'      => isset( $_POST['duracao_horas'] ) ? intval( $_POST['duracao_horas'] ) : 0,
-            'cidade'             => isset( $_POST['cidade'] ) ? sanitize_text_field( wp_unslash( $_POST['cidade'] ) ) : '',
-            'data_emissao'       => isset( $_POST['data_emissao'] ) ? sanitize_text_field( wp_unslash( $_POST['data_emissao'] ) ) : '0000-00-00',
-            'numero_livro'       => isset( $_POST['numero_livro'] ) ? sanitize_text_field( wp_unslash( $_POST['numero_livro'] ) ) : '',
-            'numero_pagina'      => isset( $_POST['numero_pagina'] ) ? sanitize_text_field( wp_unslash( $_POST['numero_pagina'] ) ) : '',
-            'numero_certificado' => isset( $_POST['numero_certificado'] ) ? sanitize_text_field( wp_unslash( $_POST['numero_certificado'] ) ) : '',
-        );
-
-        if ( $id > 0 ) {
-            // Verify participant belongs to user
-            $owner = $wpdb->get_var( $wpdb->prepare( "SELECT user_id FROM {$table_name} WHERE id = %d", $id ) );
-            if ( intval( $owner ) !== intval( $user->ID ) ) {
-                wp_send_json_error( array( 'message' => __( 'Permissão negada para editar este participante.', 'gerador-certificados-wp' ) ) );
-            }
-
-            $wpdb->update( $table_name, $data, array( 'id' => $id ), array_fill( 0, count( $data ), '%s' ), array( '%d' ) );
-            wp_send_json_success( array( 'message' => __( 'Participante atualizado com sucesso.', 'gerador-certificados-wp' ) ) );
+        if ( ! empty( $_POST['participant_id'] ) ) {
+            \GCWP\Database\ParticipantsTable::update( intval( $_POST['participant_id'] ), $data );
+            wp_send_json_success( __( 'Participante atualizado com sucesso.', 'gerador-certificados-wp' ) );
         } else {
-            $data['user_id'] = $user->ID;
-            $format = array( '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%d' );
-            $wpdb->insert( $table_name, $data );
-            wp_send_json_success( array( 'message' => __( 'Participante criado com sucesso.', 'gerador-certificados-wp' ) ) );
+            \GCWP\Database\ParticipantsTable::insert( $data );
+            wp_send_json_success( __( 'Participante adicionado com sucesso.', 'gerador-certificados-wp' ) );
         }
     }
 
-    public static function ajax_delete_participant() {
-        if ( ! isset( $_POST['gcwp_public_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gcwp_public_nonce'] ) ), 'gcwp_public_actions' ) ) {
-            wp_send_json_error( array( 'message' => __( 'Erro de segurança (nonce).', 'gerador-certificados-wp' ) ) );
+    public static function handle_generate_certificate() {
+        check_ajax_referer( 'gcwp_public_actions', 'nonce' );
+
+        if ( ! is_user_logged_in() || ! current_user_can( 'subscriber' ) ) {
+            wp_die( __( 'Acesso negado.', 'gerador-certificados-wp' ) );
         }
 
-        $access = self::check_access();
-        if ( is_wp_error( $access ) ) {
-            wp_send_json_error( array( 'message' => $access->get_error_message() ) );
-        }
-        $user = $access;
+        $participant_id = intval( $_POST['participant_id'] );
+        $modelo_slug = sanitize_text_field( $_POST['modelo_slug'] );
+        // $user_id = get_current_user_id();
 
-        $id = isset( $_POST['id'] ) ? intval( $_POST['id'] ) : 0;
-        if ( $id <= 0 ) {
-            wp_send_json_error( array( 'message' => __( 'ID inválido.', 'gerador-certificados-wp' ) ) );
-        }
-
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'gcwp_participantes';
-        $owner = $wpdb->get_var( $wpdb->prepare( "SELECT user_id FROM {$table_name} WHERE id = %d", $id ) );
-        if ( intval( $owner ) !== intval( $user->ID ) ) {
-            wp_send_json_error( array( 'message' => __( 'Permissão negada para excluir este participante.', 'gerador-certificados-wp' ) ) );
+        $participant = \GCWP\Database\ParticipantsTable::get( $participant_id );
+        // if ( ! $participant || $participant['user_id'] != $user_id ) {
+        if ( ! $participant ) {
+            wp_send_json_error( __( 'Participante não encontrado.', 'gerador-certificados-wp' ) );
         }
 
-        $wpdb->delete( $table_name, array( 'id' => $id ), array( '%d' ) );
-        wp_send_json_success( array( 'message' => __( 'Participante excluído.', 'gerador-certificados-wp' ) ) );
-    }
-
-    public static function ajax_import_participants() {
-        if ( ! isset( $_POST['gcwp_public_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gcwp_public_nonce'] ) ), 'gcwp_public_actions' ) ) {
-            wp_send_json_error( array( 'message' => __( 'Erro de segurança (nonce).', 'gerador-certificados-wp' ) ) );
+        if ( empty( $modelo_slug ) ) {
+            wp_send_json_error( __( 'Modelo não selecionado.', 'gerador-certificados-wp' ) );
         }
 
-        $access = self::check_access();
-        if ( is_wp_error( $access ) ) {
-            wp_send_json_error( array( 'message' => $access->get_error_message() ) );
-        }
-        $user = $access;
+        $generator = new \GCWP\Core\CertificateGenerator();
+        $result = $generator->generate_certificate( (object) $participant, $modelo_slug );
 
-        if ( empty( $_FILES['csv_file'] ) || ! is_uploaded_file( $_FILES['csv_file']['tmp_name'] ) ) {
-            wp_send_json_error( array( 'message' => __( 'Arquivo CSV não enviado.', 'gerador-certificados-wp' ) ) );
-        }
-
-        $tmp = $_FILES['csv_file']['tmp_name'];
-        $handle = fopen( $tmp, 'r' );
-        if ( ! $handle ) {
-            wp_send_json_error( array( 'message' => __( 'Não foi possível abrir o arquivo.', 'gerador-certificados-wp' ) ) );
-        }
-
-        $header = fgetcsv( $handle );
-        if ( ! $header ) {
-            fclose( $handle );
-            wp_send_json_error( array( 'message' => __( 'CSV vazio ou inválido.', 'gerador-certificados-wp' ) ) );
-        }
-
-        $expected = array( 'nome_completo','email','curso','data_inicio','data_termino','duracao_horas','cidade','data_emissao','numero_livro','numero_pagina','numero_certificado' );
-        $map = array();
-        foreach ( $header as $i => $col ) {
-            $col = strtolower( trim( $col ) );
-            if ( in_array( $col, $expected, true ) ) {
-                $map[ $i ] = $col;
-            }
-        }
-
-        if ( empty( $map ) ) {
-            fclose( $handle );
-            wp_send_json_error( array( 'message' => __( 'Cabeçalho CSV não contém colunas esperadas.', 'gerador-certificados-wp' ) ) );
-        }
-
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'gcwp_participantes';
-        $count = 0;
-        while ( ( $row = fgetcsv( $handle ) ) !== false ) {
-            $data = array();
-            foreach ( $map as $idx => $col_name ) {
-                $value = isset( $row[ $idx ] ) ? $row[ $idx ] : '';
-                $data[ $col_name ] = sanitize_text_field( $value );
-            }
-            $data['user_id'] = $user->ID;
-            // Ensure defaults
-            foreach ( $expected as $k ) {
-                if ( ! isset( $data[ $k ] ) ) {
-                    $data[ $k ] = '';
-                }
-            }
-            $wpdb->insert( $table_name, $data );
-            $count++;
-        }
-        fclose( $handle );
-
-        wp_send_json_success( array( 'message' => sprintf( _n( '%d participante importado.', '%d participantes importados.', $count, 'gerador-certificados-wp' ), $count ) ) );
-    }
-
-    public static function ajax_issue_certificate() {
-        if ( ! isset( $_POST['gcwp_public_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['gcwp_public_nonce'] ) ), 'gcwp_public_actions' ) ) {
-            wp_send_json_error( array( 'message' => __( 'Erro de segurança (nonce).', 'gerador-certificados-wp' ) ) );
-        }
-
-        $access = self::check_access();
-        if ( is_wp_error( $access ) ) {
-            wp_send_json_error( array( 'message' => $access->get_error_message() ) );
-        }
-        $user = $access;
-
-        $participante_id = isset( $_POST['participante_id'] ) ? intval( $_POST['participante_id'] ) : 0;
-        $modelo_id = isset( $_POST['modelo_id'] ) ? sanitize_text_field( wp_unslash( $_POST['modelo_id'] ) ) : '';
-
-        if ( $participante_id <= 0 || empty( $modelo_id ) ) {
-            wp_send_json_error( array( 'message' => __( 'Parâmetros inválidos.', 'gerador-certificados-wp' ) ) );
-        }
-
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'gcwp_participantes';
-        $row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table_name} WHERE id = %d", $participante_id ), ARRAY_A );
-        if ( ! $row ) {
-            wp_send_json_error( array( 'message' => __( 'Participante não encontrado.', 'gerador-certificados-wp' ) ) );
-        }
-        if ( intval( $row['user_id'] ) !== intval( $user->ID ) ) {
-            wp_send_json_error( array( 'message' => __( 'Permissão negada para emitir certificado para este participante.', 'gerador-certificados-wp' ) ) );
-        }
-
-        // Load generator class (already required in main plugin file)
-        if ( ! class_exists( 'GCWP_Certificate_Generator' ) ) {
-            wp_send_json_error( array( 'message' => __( 'Gerador de certificados não disponível.', 'gerador-certificados-wp' ) ) );
-        }
-
-        $generator = new GCWP_Certificate_Generator();
-
-        // Convert $row to object as expected by generator
-        $participant_obj = (object) $row;
-
-        $result = $generator->generate_certificate( $participant_obj, $modelo_id );
         if ( is_wp_error( $result ) ) {
-            wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+            wp_send_json_error( $result->get_error_message() );
+        } else {
+            wp_send_json_success( [
+                'message' => __( 'Certificado gerado com sucesso.', 'gerador-certificados-wp' ),
+                'url' => $result['url'],
+            ] );
         }
-
-        // Expected $result to contain 'path' and 'url'
-        wp_send_json_success( array( 'message' => __( 'Certificado gerado com sucesso.', 'gerador-certificados-wp' ), 'result' => $result ) );
     }
-
 }

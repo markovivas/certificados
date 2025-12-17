@@ -1,0 +1,202 @@
+/* Estilos Gerais para o Plugin de Certificados */
+.wrap.gcp-wrap h1 {
+    margin-bottom: 20px;
+}
+
+.gcp-wrap .nav-tab-wrapper {
+    margin-bottom: 20px;
+}
+
+.gcp-card {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 20px;
+    margin-top: 20px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
+}
+
+.gcp-card h2 {
+    margin-top: 0;
+    font-size: 1.2em;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+/* --- Estilos para Formulários (Participantes e Configurações) --- */
+.gcp-form-table {
+    width: 100%;
+}
+
+.gcp-form-table th {
+    width: 200px;
+    padding: 15px 10px 15px 0;
+    vertical-align: top;
+}
+
+.gcp-form-table td {
+    padding: 10px 0;
+}
+
+.gcp-form-table .regular-text {
+    width: 100%;
+    max-width: 400px;
+}
+
+.gcp-form-table select {
+    min-width: 200px;
+}
+
+/* --- Estilos Modernos para Botões --- */
+.gcp-wrap .button,
+.gcp-wrap .page-title-action {
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.gcp-wrap .button:hover,
+.gcp-wrap .page-title-action:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Botão de Perigo (Excluir, Resetar) */
+.gcp-wrap .button-danger,
+.gcp-wrap .button-link-delete {
+    color: #d63638;
+}
+
+.gcp-wrap .button-danger {
+    background: #f8f9fa;
+    border-color: #d63638;
+    color: #d63638;
+}
+
+.gcp-wrap .button-danger:hover,
+.gcp-wrap .button-danger:focus {
+    background: #d63638;
+    border-color: #b22222;
+    color: #fff;
+}
+
+.gcp-wrap .button-link-delete:hover {
+    color: #b22222;
+}
+
+/* --- Estilos para a Tabela de Participantes --- */
+/*
+  Para a tabela, use as classes: <table class="wp-list-table widefat fixed striped">
+*/
+.wp-list-table th .dashicons {
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+.wp-list-table .row-actions {
+    color: #999;
+}
+
+/* --- Estilos para a Página de Emissão --- */
+.gcp-emissao-container {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 20px;
+}
+
+.gcp-emissao-main {
+    /* Ocupa a coluna principal */
+}
+
+.gcp-emissao-sidebar .gcp-card {
+    margin-top: 0;
+}
+
+.gcp-emissao-sidebar select {
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.gcp-emissao-sidebar .button-primary {
+    width: 100%;
+    justify-content: center;
+    height: 40px;
+    font-size: 1.1em;
+}
+
+.gcp-emissao-sidebar .description {
+    margin-top: 10px;
+    color: #666;
+    font-style: italic;
+}
+
+/* --- Layout da Página de Participantes (70/30) --- */
+.gcwp-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.gcwp-panel-form {
+    flex: 1 1 65%; /* Ocupa 65% e permite encolher */
+    min-width: 400px; /* Largura mínima antes de quebrar a linha */
+}
+
+.gcwp-panel-list {
+    flex: 1 1 30%; /* Ocupa 30% e permite encolher */
+    min-width: 300px;
+}
+
+.gcwp-panel {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 20px;
+}
+
+.gcwp-panel h3 {
+    margin-top: 0;
+    font-size: 1.2em;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+/* --- Estilos para os Cards de Participantes --- */
+.gcwp-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.gcwp-card {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    transition: box-shadow 0.2s ease-in-out;
+}
+
+.gcwp-card:hover {
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.gcwp-card-title {
+    margin: 0 0 5px 0;
+    font-size: 1.1em;
+    font-weight: 600;
+}
+
+.gcwp-card-meta {
+    font-size: 0.9em;
+    color: #555;
+    margin-bottom: 15px;
+}
+
+.gcwp-card-meta span {
+    display: block;
+}
+
+.gcwp-card-actions {
+    display: flex;
+    gap: 10px;
+}
