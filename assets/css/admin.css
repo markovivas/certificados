@@ -1,202 +1,205 @@
-/* Estilos Gerais para o Plugin de Certificados */
-.wrap.gcp-wrap h1 {
-    margin-bottom: 20px;
-}
-
-.gcp-wrap .nav-tab-wrapper {
-    margin-bottom: 20px;
-}
-
-.gcp-card {
-    background: #fff;
-    border: 1px solid #c3c4c7;
-    border-radius: 4px;
-    padding: 20px;
-    margin-top: 20px;
-    box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
-}
-
-.gcp-card h2 {
-    margin-top: 0;
-    font-size: 1.2em;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 15px;
-    margin-bottom: 15px;
-}
-
-/* --- Estilos para Formulários (Participantes e Configurações) --- */
-.gcp-form-table {
-    width: 100%;
-}
-
-.gcp-form-table th {
-    width: 200px;
-    padding: 15px 10px 15px 0;
-    vertical-align: top;
-}
-
-.gcp-form-table td {
-    padding: 10px 0;
-}
-
-.gcp-form-table .regular-text {
-    width: 100%;
-    max-width: 400px;
-}
-
-.gcp-form-table select {
-    min-width: 200px;
-}
-
-/* --- Estilos Modernos para Botões --- */
-.gcp-wrap .button,
-.gcp-wrap .page-title-action {
-    transition: all 0.2s ease-in-out;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.gcp-wrap .button:hover,
-.gcp-wrap .page-title-action:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* Botão de Perigo (Excluir, Resetar) */
-.gcp-wrap .button-danger,
-.gcp-wrap .button-link-delete {
-    color: #d63638;
-}
-
-.gcp-wrap .button-danger {
-    background: #f8f9fa;
-    border-color: #d63638;
-    color: #d63638;
-}
-
-.gcp-wrap .button-danger:hover,
-.gcp-wrap .button-danger:focus {
-    background: #d63638;
-    border-color: #b22222;
-    color: #fff;
-}
-
-.gcp-wrap .button-link-delete:hover {
-    color: #b22222;
-}
-
-/* --- Estilos para a Tabela de Participantes --- */
-/*
-  Para a tabela, use as classes: <table class="wp-list-table widefat fixed striped">
-*/
-.wp-list-table th .dashicons {
-    vertical-align: middle;
-    margin-right: 5px;
-}
-
-.wp-list-table .row-actions {
-    color: #999;
-}
-
-/* --- Estilos para a Página de Emissão --- */
-.gcp-emissao-container {
-    display: grid;
-    grid-template-columns: 1fr 300px;
-    gap: 20px;
-}
-
-.gcp-emissao-main {
-    /* Ocupa a coluna principal */
-}
-
-.gcp-emissao-sidebar .gcp-card {
-    margin-top: 0;
-}
-
-.gcp-emissao-sidebar select {
-    width: 100%;
-    margin-bottom: 15px;
-}
-
-.gcp-emissao-sidebar .button-primary {
-    width: 100%;
-    justify-content: center;
-    height: 40px;
-    font-size: 1.1em;
-}
-
-.gcp-emissao-sidebar .description {
-    margin-top: 10px;
-    color: #666;
-    font-style: italic;
-}
-
-/* --- Layout da Página de Participantes (70/30) --- */
-.gcwp-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-}
-
-.gcwp-panel-form {
-    flex: 1 1 65%; /* Ocupa 65% e permite encolher */
-    min-width: 400px; /* Largura mínima antes de quebrar a linha */
-}
-
-.gcwp-panel-list {
-    flex: 1 1 30%; /* Ocupa 30% e permite encolher */
-    min-width: 300px;
-}
-
-.gcwp-panel {
-    background: #fff;
-    border: 1px solid #c3c4c7;
-    border-radius: 4px;
-    padding: 20px;
-}
-
-.gcwp-panel h3 {
-    margin-top: 0;
-    font-size: 1.2em;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 15px;
-    margin-bottom: 15px;
-}
-
-/* --- Estilos para os Cards de Participantes --- */
-.gcwp-cards {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+.gcwp-admin-page {
+    max-width: 1440px;
 }
 
 .gcwp-card {
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 15px;
-    transition: box-shadow 0.2s ease-in-out;
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 12px 30px rgba(12, 24, 36, 0.05);
 }
 
-.gcwp-card:hover {
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-.gcwp-card-title {
-    margin: 0 0 5px 0;
-    font-size: 1.1em;
-    font-weight: 600;
-}
-
-.gcwp-card-meta {
-    font-size: 0.9em;
-    color: #555;
-    margin-bottom: 15px;
-}
-
-.gcwp-card-meta span {
-    display: block;
-}
-
-.gcwp-card-actions {
+.gcwp-section-heading {
     display: flex;
-    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.gcwp-section-heading h2 {
+    margin: 0;
+}
+
+.gcwp-models-layout {
+    display: grid;
+    grid-template-columns: 1.5fr .9fr;
+    gap: 24px;
+    align-items: start;
+}
+
+.gcwp-model-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 18px;
+}
+
+.gcwp-model-card {
+    border: 1px solid #dcdcde;
+    border-radius: 14px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #fff 0%, #f6f8fb 100%);
+}
+
+.gcwp-model-card.is-selected {
+    border-color: #0f5f4f;
+    box-shadow: 0 0 0 2px rgba(15, 95, 79, 0.12);
+}
+
+.gcwp-model-thumb {
+    height: 190px;
+    background: #eef1f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gcwp-model-thumb img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.gcwp-model-body {
+    padding: 16px;
+}
+
+.gcwp-model-body h3 {
+    margin: 0 0 6px;
+}
+
+.gcwp-model-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.gcwp-stacked-form {
+    display: grid;
+    gap: 12px;
+}
+
+.gcwp-stacked-form input[type="text"],
+.gcwp-stacked-form input[type="file"],
+.gcwp-field-grid input,
+.gcwp-field-grid select,
+.gcwp-form-control input {
+    width: 100%;
+}
+
+.gcwp-model-editor {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(380px, .8fr);
+    gap: 24px;
+    align-items: start;
+}
+
+.gcwp-model-editor-main,
+.gcwp-model-editor-side {
+    display: grid;
+    gap: 24px;
+}
+
+.gcwp-two-columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.gcwp-form-control {
+    display: grid;
+    gap: 6px;
+}
+
+.gcwp-field-list {
+    display: grid;
+    gap: 16px;
+}
+
+.gcwp-field-row {
+    border: 1px solid #dcdcde;
+    border-radius: 12px;
+    padding: 16px;
+    background: #fafbfd;
+}
+
+.gcwp-field-row-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.gcwp-field-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.gcwp-field-grid label {
+    display: grid;
+    gap: 4px;
+}
+
+.gcwp-inline-toggle {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    padding-top: 24px;
+}
+
+.gcwp-preview-board {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 297 / 210;
+    border-radius: 12px;
+    border: 1px solid #dcdcde;
+    background-color: #eef1f6;
+    background-size: cover;
+    background-position: center;
+    overflow: hidden;
+}
+
+.gcwp-preview-empty {
+    display: grid;
+    place-items: center;
+    height: 100%;
+    color: #55616d;
+}
+
+.gcwp-overlay {
+    position: absolute;
+    min-width: 60px;
+    padding: 4px 6px;
+    border: 1px dashed rgba(7, 71, 166, 0.45);
+    background: rgba(255, 248, 185, 0.85);
+    cursor: move;
+    line-height: 1.2;
+}
+
+.gcp-wrap .button-danger,
+.gcp-wrap .button-link-delete,
+.gcwp-admin-page .button-link-delete {
+    color: #c62828;
+}
+
+.gcp-emissao-container {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 20px;
+}
+
+@media (max-width: 1180px) {
+    .gcwp-model-editor,
+    .gcwp-models-layout,
+    .gcp-emissao-container,
+    .gcwp-field-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .gcwp-two-columns {
+        grid-template-columns: 1fr;
+    }
 }

@@ -51,6 +51,7 @@ class Plugin {
     private function load_dependencies() {
         // Load core classes
         require_once GCWP_PLUGIN_DIR . 'includes/Core/Utils.php';
+        require_once GCWP_PLUGIN_DIR . 'includes/Core/TemplateRepository.php';
         require_once GCWP_PLUGIN_DIR . 'includes/Core/CertificateGenerator.php';
         require_once GCWP_PLUGIN_DIR . 'includes/Database/ParticipantsTable.php';
 
