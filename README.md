@@ -1,7 +1,7 @@
 # Gerador de Certificados WP
 
 **Versão:** 1.0.0  
-**Autor:** (Seu Nome)  
+**Autor:** Marco Antônio Vivas  
 **Requer PHP:** 8.0+  
 **Requer WordPress:** 5.0+  
 
